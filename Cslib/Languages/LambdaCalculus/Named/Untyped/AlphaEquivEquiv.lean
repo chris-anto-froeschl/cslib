@@ -101,12 +101,60 @@ lemma alphaEquivPFresh_of_alphaEquiv {m n : Term Var} : AlphaEquivPFresh m n →
 theorem alphaEquiv_iff_alphaEquivPFresh (m n : Term Var) : AlphaEquiv m n ↔ AlphaEquivPFresh m n :=
   ⟨alphaEquiv_of_alphaEquivPFresh, alphaEquivPFresh_of_alphaEquiv⟩
 
-/-
-/-! ## Theorem 4.2 [Crole2012] -/
-theorem alphaEquiv_iff_alphaEquivP1 (m n : Term Var) :
-    AlphaEquiv m n ↔ AlphaEquivP1 m n := by
-  sorry
+omit [HasFresh Var] in
+lemma alphaEquivP1_of_alphaEquiv {m n : Term Var} : AlphaEquiv m n → AlphaEquivP1 m n := by
+  intro h
+  induction h with
+  | var => constructor
+  -- Trivial: `pi` gives `y ∉ m1.vars ∪ m2.vars ∪ {x1, x2}`; `pi1` only needs `y ∉ m1.vars ∪ m2.vars`.
+  | abs hy _h ih => exact AlphaEquivP1.abs (by aesop) ih
+  | app _ _ ih1 ih2 => exact AlphaEquivP1.app ih1 ih2
 
+lemma alphaEquiv_abs_of_rename_self {m1 m2 : Term Var} {x1 x2 : Var}
+  (hx1m2 : x1 ∉ m2.vars)
+  (ih : m1 =α (m2.rename x2 x1)) :
+  (Term.abs x1 m1) =α (Term.abs x2 m2) := by
+    -- Pick any atom `z` with `z ∉ a, b, E, E'`.
+    obtain ⟨z, hz⟩ : ∃ z : Var, z ∉ m1.vars ∪ m2.vars ∪ {x1, x2} := Infinite.exists_notMem_finset _
+    -- Rewrite `(a b) · E' = E'.rename b a` since `a = x1 ∉ E'.vars` (Definition 3.1 uses `rename`).
+    rw [← swap_eq_rename_of_not_mem_vars hx1m2] at ih
+    -- Using Lemma 6.1 we get `(z a) · E ∼p (z a) · ((a b) · E')`.
+    have h61 := AlphaEquiv.swap_preserve (u := z) (v := x1) ih
+    -- From Lemma 6.2 part 1: `(z a) · ((a b) · E') = (z b) · E'` since `z, a ∤ E'`.
+    rw [swap_comm (m := m2) (x := x2) (y := x1),
+        swap_comp_eq_of_not_mem_vars hx1m2 (by aesop)] at h61
+    -- Now `h61 : (z a) · E ∼p (z b) · E'`; appeal to `pi`, converting swaps back to renames.
+    apply AlphaEquiv.abs (y := z) (by aesop)
+    rw [← swap_eq_rename_of_not_mem_vars (show z ∉ m1.vars by aesop),
+        ← swap_eq_rename_of_not_mem_vars (show z ∉ m2.vars by aesop),
+        swap_comm (m := m1) (x := x1) (y := z), swap_comm (m := m2) (x := x2) (y := z)]
+    exact h61
+
+lemma alphaEquiv_of_alphaEquivP1 {m n : Term Var} : AlphaEquivP1 m n → AlphaEquiv m n := by
+  intro h
+  induction h with
+  | var => constructor
+  | abs hy hP1 ih =>
+    rename_i u a b E E'
+    by_cases hua : u = a
+    · subst hua
+      -- wlog assume `u = a`
+      rw [rename_same] at ih
+      exact alphaEquiv_abs_of_rename_self (by aesop) ih
+    · by_cases hub : u = b
+      · -- Case `u = b`: symmetric to the previous case, using symmetry of `∼p`.
+        subst hub
+        rw [rename_same] at ih
+        exact AlphaEquiv.symm (alphaEquiv_abs_of_rename_self (by aesop) (AlphaEquiv.symm ih))
+      · -- Case `u ≠ b`: `u ∉ E.vars ∪ E'.vars ∪ {a, b}`, so appeal directly to `pi`.
+        exact AlphaEquiv.abs (y := u) (by aesop) ih
+  | app _ _ ih1 ih2 => exact AlphaEquiv.app ih1 ih2
+
+/-! ## Theorem 4.2 [Crole2012] -/
+theorem alphaEquiv_iff_alphaEquivP1 (m n : Term Var) : AlphaEquiv m n ↔ AlphaEquivP1 m n :=
+  ⟨alphaEquivP1_of_alphaEquiv, alphaEquiv_of_alphaEquivP1⟩
+
+/-
 /-! ## Theorem 4.4 [Crole2012] -/
 theorem alphaEquiv_iff_alphaEquivR (m n : Term Var) :
     AlphaEquiv m n ↔ AlphaEquivR m n := by
