@@ -106,7 +106,6 @@ lemma alphaEquivP1_of_alphaEquiv {m n : Term Var} : AlphaEquiv m n → AlphaEqui
   intro h
   induction h with
   | var => constructor
-  -- Trivial: `pi` gives `y ∉ m1.vars ∪ m2.vars ∪ {x1, x2}`; `pi1` only needs `y ∉ m1.vars ∪ m2.vars`.
   | abs hy _h ih => exact AlphaEquivP1.abs (by aesop) ih
   | app _ _ ih1 ih2 => exact AlphaEquivP1.app ih1 ih2
 
@@ -118,17 +117,14 @@ lemma alphaEquiv_abs_of_rename_self {m1 m2 : Term Var} {x1 x2 : Var}
     obtain ⟨z, hz⟩ : ∃ z : Var, z ∉ m1.vars ∪ m2.vars ∪ {x1, x2} := Infinite.exists_notMem_finset _
     -- Rewrite `(a b) · E' = E'.rename b a` since `a = x1 ∉ E'.vars` (Definition 3.1 uses `rename`).
     rw [← swap_eq_rename_of_not_mem_vars hx1m2] at ih
-    -- Using Lemma 6.1 we get `(z a) · E ∼p (z a) · ((a b) · E')`.
+    -- Using Lemma 6.1
     have h61 := AlphaEquiv.swap_preserve (u := z) (v := x1) ih
-    -- From Lemma 6.2 part 1: `(z a) · ((a b) · E') = (z b) · E'` since `z, a ∤ E'`.
-    rw [swap_comm (m := m2) (x := x2) (y := x1),
-        swap_comp_eq_of_not_mem_vars hx1m2 (by aesop)] at h61
-    -- Now `h61 : (z a) · E ∼p (z b) · E'`; appeal to `pi`, converting swaps back to renames.
-    apply AlphaEquiv.abs (y := z) (by aesop)
-    rw [← swap_eq_rename_of_not_mem_vars (show z ∉ m1.vars by aesop),
-        ← swap_eq_rename_of_not_mem_vars (show z ∉ m2.vars by aesop),
-        swap_comm (m := m1) (x := x1) (y := z), swap_comm (m := m2) (x := x2) (y := z)]
-    exact h61
+    -- From Lemma 6.2 part 1
+    nth_rw 3 [swap_comm] at h61
+    rw [swap_comp_eq_of_not_mem_vars hx1m2 (by aesop)] at h61
+    rw [swap_comm, swap_eq_rename_of_not_mem_vars (by aesop)] at h61
+    rw [swap_comm, swap_eq_rename_of_not_mem_vars (by aesop)] at h61
+    apply AlphaEquiv.abs (y := z) (by aesop) h61
 
 lemma alphaEquiv_of_alphaEquivP1 {m n : Term Var} : AlphaEquivP1 m n → AlphaEquiv m n := by
   intro h
@@ -153,6 +149,69 @@ lemma alphaEquiv_of_alphaEquivP1 {m n : Term Var} : AlphaEquivP1 m n → AlphaEq
 /-! ## Theorem 4.2 [Crole2012] -/
 theorem alphaEquiv_iff_alphaEquivP1 (m n : Term Var) : AlphaEquiv m n ↔ AlphaEquivP1 m n :=
   ⟨alphaEquivP1_of_alphaEquiv, alphaEquiv_of_alphaEquivP1⟩
+
+/-- **Proposition 4.3** [Crole2012].  Of the four variants in the paper's table, the first
+relation is `AlphaEquiv` itself and the second coincides with it by Theorem 4.2, whereas
+`∼²p` and `∼³p` do not coincide with α-equivalence. -/
+theorem alphaEquiv_variants :
+  (∀ m n : Term Var, AlphaEquiv m n ↔ AlphaEquiv m n) ∧
+  (∀ m n : Term Var, AlphaEquivP1 m n ↔ AlphaEquiv m n) ∧
+  (¬ ∀ m n : Term Var, AlphaEquivP2 m n ↔ AlphaEquiv m n) ∧
+  (¬ ∀ m n : Term Var, AlphaEquivP3 m n ↔ AlphaEquiv m n) := by
+    and_intros
+    · intro m n
+      exact Iff.rfl
+    · intro m n
+      exact (alphaEquiv_iff_alphaEquivP1 m n).symm
+    -- TODO cleanup those cases more
+    · let a := HasFresh.fresh ({} : Finset Var)
+      let b := HasFresh.fresh {a}
+      have hab : a ≠ b := by grind [fresh_notMem]
+      obtain ⟨z, hz⟩ : ∃ z : Var, z ∉ ({a, b} : Finset Var) := Infinite.exists_notMem_finset {a, b}
+      have hz' : z ≠ a ∧ z ≠ b := by simp_all
+      have hza : z ≠ a := hz'.1
+      have hzb : z ≠ b := hz'.2
+      rw [not_forall]
+      use (abs a (app (var a) (var z)))
+      rw [not_forall]
+      use (abs b (app (var b) (var a)))
+      rw [iff_comm, not_iff]
+      constructor
+      · intro h
+        have h' :
+          (((var a).app (var z)).swap z a).AlphaEquivP2 (((var b).app (var a)).swap z b) := by
+            apply AlphaEquivP2.app
+            · simp [permute, AlphaEquivP2.var]
+            · have h' : Equiv.swap z b a = a := by grind
+              simp [permute, AlphaEquivP2.var, h']
+        apply AlphaEquivP2.abs hz h'
+      · intro h h'
+        -- clearly not α-equivalent: compare free variables.
+        have hz : z ∈ (abs a (app (var a) (var z))).fv := by simp [fv, hza]
+        rw [h'.same_fv] at hz
+        have hz' : z = b ∨ z = a := by simp_all [fv]
+        simp_all
+    · let a := HasFresh.fresh (∅ : Finset Var)
+      let b := HasFresh.fresh {a}
+      have hab : a ≠ b := by grind [fresh_notMem]
+      rw [not_forall]
+      use (abs a (app (var b) (var a)))
+      rw [not_forall]
+      use (abs b (app (var a) (var b)))
+      rw [iff_comm, not_iff]
+      constructor
+      · intro h
+        apply AlphaEquivP3.abs (z := b)
+        apply AlphaEquivP3.app
+        · simp_all [permute, AlphaEquivP3.var]
+        · simp_all [permute, AlphaEquivP3.var]
+      · intro h h'
+        -- Again, the displayed terms have different sets of free variables when `a ≠ b`.
+        have hb : b ∈ (abs a (app (var b) (var a))).fv := by
+          simp only [fv, Finset.mem_sdiff, Finset.mem_union, Finset.mem_singleton]
+          exact ⟨Or.inl trivial, Ne.symm hab⟩
+        rw [h'.same_fv] at hb
+        simp [fv, hab, Ne.symm hab] at hb
 
 /-
 /-! ## Theorem 4.4 [Crole2012] -/

@@ -133,16 +133,6 @@ lemma swap_rename_comm' {m : Term Var} {u v x z : Var} (hzu : z ≠ u) (hzv : z 
     simp_all
     grind
 
-lemma swap_comp_eq_of_not_mem_vars {m : Term Var} {a u z : Var}
-  (hu : u ∉ m.vars) (hz : z ∉ m.vars) :
-  (m.swap u a).swap z u = m.swap z a := by
-    induction m
-    · simp_all [Term.swap, Term.vars, permute]
-      grind
-    · simp_all [Term.swap, Term.vars, permute]
-      grind
-    · simp_all [Term.swap, Term.vars, permute]
-
 /-- Term-level conjugation identity: `(m.swap u v).swap v a = (m.swap u a).swap u v`
 when `a ∉ {u, v}`.
 
@@ -426,6 +416,29 @@ lemma permute_eq_of_vars_subset_agreementSet (m : Term Var) (π π' : Equiv.Perm
       have hm : m.permute π = m.permute π' := ihm fun y hy => h (by simp [vars, hy])
       have hn : n.permute π = n.permute π' := ihn fun y hy => h (by simp [vars, hy])
       simp [permute, hm, hn]
+
+omit [HasFresh Var] [DecidableEq Var] in
+lemma permute_permute (m : Term Var) (π π' : Equiv.Perm Var) :
+  (m.permute π).permute π' = m.permute (π' * π) := by
+    induction m with
+    | var x => simp [permute]
+    | abs x m ih => simp [permute, ih]
+    | app m n ih_m ih_n => simp [permute, ih_m, ih_n]
+
+omit [HasFresh Var] in
+/-- **Lemma 6.2 part 1** [Crole2012] (specialized). -/
+lemma swap_comp_eq_of_not_mem_vars {m : Term Var} {a u z : Var}
+  (hu : u ∉ m.vars) (hz : z ∉ m.vars) :
+  (m.swap u a).swap z u = m.swap z a := by
+    unfold swap
+    let π :=  (Equiv.swap z u) * (Equiv.swap u a)
+    let π' := Equiv.swap z a
+    have h : (m.vars : Set Var) ⊆ agreementSet π π' := by
+      intro x hx
+      simp only [agreementSet, Set.mem_setOf_eq, π, π', Equiv.Perm.coe_mul, Function.comp_apply]
+      grind
+    rw [permute_permute m (Equiv.swap u a) (Equiv.swap z u)]
+    exact permute_eq_of_vars_subset_agreementSet m π π' h
 
 /-- **Lemma 6.2 part 2** [Crole2012]. -/
 lemma permute_alphaEquiv_of_fv_subset_agreementSet (m : Term Var) (π π' : Equiv.Perm Var)

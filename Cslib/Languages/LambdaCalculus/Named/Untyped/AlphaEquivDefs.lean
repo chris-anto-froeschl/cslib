@@ -110,6 +110,28 @@ inductive AlphaEquivP1 : Term Var → Term Var → Prop where
     AlphaEquivP1 m1 n1 → AlphaEquivP1 m2 n2 →
     AlphaEquivP1 (app m1 m2) (app n1 n2)
 
+/-- The relation `∼²p` from Proposition 4.3:
+the `pi2` witness need only differ from the two binding variables. -/
+inductive AlphaEquivP2 : Term Var → Term Var → Prop where
+  | var {x : Var} : AlphaEquivP2 (var x) (var x)
+  | abs {z x1 x2 : Var} {m1 m2 : Term Var} :
+    z ∉ ({x1, x2} : Finset Var) →
+    AlphaEquivP2 (m1.swap z x1) (m2.swap z x2) →
+    AlphaEquivP2 (abs x1 m1) (abs x2 m2)
+  | app {m1 n1 m2 n2 : Term Var} :
+    AlphaEquivP2 m1 n1 → AlphaEquivP2 m2 n2 →
+    AlphaEquivP2 (app m1 m2) (app n1 n2)
+
+/-- The relation `∼³p` from Proposition 4.3: the `pi3` rule has no side condition. -/
+inductive AlphaEquivP3 : Term Var → Term Var → Prop where
+  | var {x : Var} : AlphaEquivP3 (var x) (var x)
+  | abs {z x1 x2 : Var} {m1 m2 : Term Var} :
+    AlphaEquivP3 (m1.swap z x1) (m2.swap z x2) →
+    AlphaEquivP3 (abs x1 m1) (abs x2 m2)
+  | app {m1 n1 m2 n2 : Term Var} :
+    AlphaEquivP3 m1 n1 → AlphaEquivP3 m2 n2 →
+    AlphaEquivP3 (app m1 m2) (app n1 n2)
+
 /-- **Definition 3.4** [Crole2012]: `∼r` - α-equivalence via the traditional renaming axiom
 with non-occurrence side condition.
 
