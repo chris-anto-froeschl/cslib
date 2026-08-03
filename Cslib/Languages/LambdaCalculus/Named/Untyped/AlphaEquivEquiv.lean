@@ -168,50 +168,43 @@ theorem alphaEquiv_variants :
       let b := HasFresh.fresh {a}
       have hab : a ≠ b := by grind [fresh_notMem]
       obtain ⟨z, hz⟩ : ∃ z : Var, z ∉ ({a, b} : Finset Var) := Infinite.exists_notMem_finset {a, b}
-      have hz' : z ≠ a ∧ z ≠ b := by simp_all
-      have hza : z ≠ a := hz'.1
-      have hzb : z ≠ b := hz'.2
-      rw [not_forall]
+      have ⟨hza, hzb⟩ : z ≠ a ∧ z ≠ b := by simpa using hz
+      apply not_forall.mpr
       use (abs a (app (var a) (var z)))
-      rw [not_forall]
+      apply not_forall.mpr
       use (abs b (app (var b) (var a)))
       rw [iff_comm, not_iff]
       constructor
-      · intro h
-        have h' :
+      · intro _
+        have h :
           (((var a).app (var z)).swap z a).AlphaEquivP2 (((var b).app (var a)).swap z b) := by
             apply AlphaEquivP2.app
             · simp [permute, AlphaEquivP2.var]
             · have h' : Equiv.swap z b a = a := by grind
               simp [permute, AlphaEquivP2.var, h']
-        apply AlphaEquivP2.abs hz h'
+        apply AlphaEquivP2.abs hz h
       · intro h h'
         -- clearly not α-equivalent: compare free variables.
-        have hz : z ∈ (abs a (app (var a) (var z))).fv := by simp [fv, hza]
-        rw [h'.same_fv] at hz
-        have hz' : z = b ∨ z = a := by simp_all [fv]
-        simp_all
+        have z_h : z ∈ (abs a (app (var a) (var z))).fv := by simp [fv, hza]
+        rw [h'.same_fv] at z_h
+        simp [fv, hza, hzb] at z_h
     · let a := HasFresh.fresh (∅ : Finset Var)
       let b := HasFresh.fresh {a}
       have hab : a ≠ b := by grind [fresh_notMem]
-      rw [not_forall]
+      apply not_forall.mpr
       use (abs a (app (var b) (var a)))
-      rw [not_forall]
+      apply not_forall.mpr
       use (abs b (app (var a) (var b)))
       rw [iff_comm, not_iff]
       constructor
       · intro h
         apply AlphaEquivP3.abs (z := b)
-        apply AlphaEquivP3.app
-        · simp_all [permute, AlphaEquivP3.var]
-        · simp_all [permute, AlphaEquivP3.var]
-      · intro h h'
+        apply AlphaEquivP3.app <;> simp_all [permute, AlphaEquivP3.var]
+      · intro _ h'
         -- Again, the displayed terms have different sets of free variables when `a ≠ b`.
-        have hb : b ∈ (abs a (app (var b) (var a))).fv := by
-          simp only [fv, Finset.mem_sdiff, Finset.mem_union, Finset.mem_singleton]
-          exact ⟨Or.inl trivial, Ne.symm hab⟩
-        rw [h'.same_fv] at hb
-        simp [fv, hab, Ne.symm hab] at hb
+        have b_h : b ∈ (abs a (app (var b) (var a))).fv := by simp [fv, Ne.symm hab]
+        rw [h'.same_fv] at b_h
+        simp [fv, hab, Ne.symm hab] at b_h
 
 /-
 /-! ## Theorem 4.4 [Crole2012] -/
