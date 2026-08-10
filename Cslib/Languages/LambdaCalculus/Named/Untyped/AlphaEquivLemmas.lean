@@ -277,7 +277,7 @@ lemma alphaEquivR_rename_subst_var {m : Term Var} {x z : Var}
       apply AlphaEquivR.abs_congr
       exact ih (by grind [vars])
 
-/-- **Lemma 6.3** [Crole2012]: `z ̸▹ E ⟹ (z a) · E ∼r E{z/a}`. -/
+/-- Lemma 6.3 [Crole2012]: `z ̸▹ E ⟹ (z a) · E ∼r E{z/a}`. -/
 lemma alphaEquivR_swap_subst_var {m : Term Var} {a z : Var} (hz : z ∉ m.vars) :
     AlphaEquivR (m.swap z a) (m.subst a (var z)) := by
   rw [swap_comm, swap_eq_rename_of_not_mem_vars hz]
@@ -313,11 +313,43 @@ lemma alphaEquivRFresh_rename_subst_var {m : Term Var} {x z : Var}
       apply AlphaEquivRFresh.abs_congr
       exact ih (by grind [vars])
 
-/-- **Lemma 6.4** [Crole2012]: `z ̸▹ E ⟹ (z a) · E ∼r# E{z/a}`. -/
+/-- Lemma 6.4 [Crole2012]: `z ̸▹ E ⟹ (z a) · E ∼r# E{z/a}`. -/
 lemma alphaEquivRFresh_swap_subst_var {m : Term Var} {a z : Var} (hz : z ∉ m.vars) :
     AlphaEquivRFresh (m.swap z a) (m.subst a (var z)) := by
   rw [swap_comm, swap_eq_rename_of_not_mem_vars hz]
   exact alphaEquivRFresh_rename_subst_var hz
+
+/-- Lemma 6.6 [Crole2012]: We can always re-name bound atoms so that a particular atom does not
+occur. -/
+lemma alphaEquivR_avoid_var {m : Term Var} {a : Var} (ha : a ∉ m.fv) :
+    ∃ m', a ∉ m'.vars ∧ AlphaEquivR m' m := by
+  induction m with
+  | var y => exact ⟨var y, by grind [vars, fv], AlphaEquivR.refl⟩
+  | app m1 m2 ih1 ih2 =>
+    obtain ⟨n1, hn1, he1⟩ := ih1 (by grind [fv])
+    obtain ⟨n2, hn2, he2⟩ := ih2 (by grind [fv])
+    exact ⟨app n1 n2, by grind [vars], AlphaEquivR.app he1 he2⟩
+  | abs y E ih =>
+    by_cases hay : a = y
+    · -- The paper's case `a = b`: pick `z ̸▹ a, E` and use `B([a]E) ∼r B([z]E{z/a})`.
+      -- Renaming the binder `a` also renames every occurrence of `a` in the body, so a
+      -- single step suffices and no appeal to the induction hypothesis is needed.
+      subst hay
+      obtain ⟨z, hz⟩ := HasFresh.fresh_exists (E.vars ∪ {a})
+      have hzE : z ∉ E.vars := by grind
+      have haz : a ≠ z := by grind
+      use abs z (E.rename a z)
+      split_ands
+      · have hanin := rename_remove (m := E) (x := a) (y := z) haz
+        grind [vars]
+      · have halpha : AlphaEquivR (abs a E) (abs z (E.subst a (var z))) :=
+          AlphaEquivR.alpha (by grind)
+        have hren : AlphaEquivR (E.rename a z) (E.subst a (var z)) :=
+          alphaEquivR_rename_subst_var hzE
+        exact (AlphaEquivR.abs_congr hren).trans halpha.symm
+    · -- The paper's case `a ̸▹ free(E)`, which "is easy": the induction hypothesis applies.
+      obtain ⟨E', hE', he⟩ := ih (by grind [fv])
+      exact ⟨abs y E', by grind [vars], AlphaEquivR.abs_congr he⟩
 
 end LambdaCalculus.Named.Untyped.Term
 
