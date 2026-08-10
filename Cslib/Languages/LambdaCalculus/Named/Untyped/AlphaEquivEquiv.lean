@@ -8,6 +8,7 @@ module
 
 public import Cslib.Languages.LambdaCalculus.Named.Untyped.Properties
 public import Cslib.Languages.LambdaCalculus.Named.Untyped.SwapProperties
+public import Cslib.Languages.LambdaCalculus.Named.Untyped.AlphaEquivLemmas
 
 /-! # Equivalence of α-equivalence definitions
 
