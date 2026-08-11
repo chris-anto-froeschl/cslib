@@ -207,22 +207,82 @@ theorem alphaEquiv_variants :
         rw [h'.same_fv] at b_h
         simp [fv, hab, Ne.symm hab] at b_h
 
-/-
+lemma alphaEquiv_of_alphaEquivR {m n : Term Var} : AlphaEquivR m n → AlphaEquiv m n := by
+  intro h
+  induction h with
+  | refl => exact AlphaEquiv.refl _
+  | symm _ ih => exact ih.symm
+  | abs_congr _ ih => exact AlphaEquiv.abs_congr ih
+  | trans _ _ ih1 ih2 => exact ih1.trans ih2
+  | app _ _ ih1 ih2 => exact AlphaEquiv.app ih1 ih2
+  -- The paper's `α` step: capture-avoiding replacement of a binder by an atom which does not
+  -- occur in the body is valid for permutation-based α-equivalence, `B([a]E) ∼p B([a']E{a'/a})`
+  -- for `a' ̸▹ a, E`.
+
+  -- The paper reduces this, by rule `pi`, to finding an atom `z ̸▹ a, a', E, E{a'/a}` with
+  -- `(z a) · E ∼p (z a') · E{a'/a}`, which is the statement `(∗∗)` it establishes by induction
+  -- on `E`.  Here `(∗∗)` is the one-variable instance `alphaEquiv_swap_subst_var` of Lemma 6.5. -/
+  | alpha hx' =>
+    rename_i x x' m
+    have hxx' : x ≠ x' := by grind
+    obtain ⟨z, hz⟩ := HasFresh.fresh_exists (m.vars ∪ (m.subst x (var x')).vars ∪ {x, x'})
+    simp only [Finset.mem_union, Finset.mem_insert, Finset.mem_singleton, not_or] at hz
+    apply AlphaEquiv.abs (y := z) (by grind)
+    rw [← swap_eq_rename_of_not_mem_vars (m := m) (x := x) (by grind),
+      ← swap_eq_rename_of_not_mem_vars (m := m.subst x (var x')) (x := x') (by grind),
+      swap_comm (m := m), swap_comm (m := m.subst x (var x'))]
+    exact alphaEquiv_swap_subst_var (by grind) (by grind) hxx'
+      (by simp_all [vars_either_fv_or_bv])
+
+lemma alphaEquivR_of_alphaEquiv {m n : Term Var} : AlphaEquiv m n → AlphaEquivR m n := by
+  intro h
+  induction h with
+  | var => exact AlphaEquivR.refl
+  | app _ _ ih1 ih2 => exact AlphaEquivR.app ih1 ih2
+  | @abs z x1 x2 m1 m2 hz hbody ih =>
+    have hz1 : z ∉ m1.vars := by simp_all
+    have hz2 : z ∉ m2.vars := by simp_all
+    -- The induction hypothesis in the paper's swap form `(z a) · E ∼r (z b) · E'`.
+    rw [← swap_eq_rename_of_not_mem_vars hz1, ← swap_eq_rename_of_not_mem_vars hz2] at ih
+    rw [swap_comm (m := m1), swap_comm (m := m2)] at ih
+    -- Lemma 6.3, twice, together with `trs`.
+    have hbodies : AlphaEquivR (m1.subst x1 (var z)) (m2.subst x2 (var z)) :=
+      ((alphaEquivR_swap_subst_var hz1).symm.trans ih).trans (alphaEquivR_swap_subst_var hz2)
+    -- Using `bcg`
+    have hbsubstar: AlphaEquivR (abs z (m1.subst x1 (var z))) (abs z (m2.subst x2 (var z))) :=
+      AlphaEquivR.abs_congr hbodies
+    -- then the two instances of `α`,
+    have hbazsubst: AlphaEquivR (abs x1 m1) (abs z (m1.subst x1 (var z))) :=
+      AlphaEquivR.alpha (by simp_all)
+    have hbbzsubst: AlphaEquivR (abs x2 m2) (abs z (m2.subst x2 (var z))) :=
+      AlphaEquivR.alpha (by simp_all)
+    -- and `sym`, `trs`.
+    apply AlphaEquivR.symm at hbbzsubst
+    apply AlphaEquivR.trans hbazsubst
+    apply AlphaEquivR.trans hbsubstar
+    exact hbbzsubst
+
 /-! ## Theorem 4.4 [Crole2012] -/
 theorem alphaEquiv_iff_alphaEquivR (m n : Term Var) :
     AlphaEquiv m n ↔ AlphaEquivR m n := by
-  sorry
+  exact ⟨alphaEquivR_of_alphaEquiv, alphaEquiv_of_alphaEquivR⟩
 
 /-! ## Theorem 4.5 [Crole2012] -/
 theorem alphaEquiv_iff_alphaEquivRFresh (m n : Term Var) :
     AlphaEquiv m n ↔ AlphaEquivRFresh m n := by
   sorry
 
-/-! ## Theorem 4.6 [Crole2012] -/
+/-- **Theorem 4.6** [Crole2012].
+
+As the paper notes, this follows from Theorems 4.4 and 4.5. The paper's alternative direct
+proof, which uses only traditional renaming techniques, is given separately below as
+`alphaEquivR_iff_alphaEquivRFresh_direct`. -/
 theorem alphaEquivR_iff_alphaEquivRFresh (m n : Term Var) :
-    AlphaEquivR m n ↔ AlphaEquivRFresh m n := by
-  sorry
--/
+    AlphaEquivR m n ↔ AlphaEquivRFresh m n :=
+  (alphaEquiv_iff_alphaEquivR m n).symm.trans (alphaEquiv_iff_alphaEquivRFresh m n)
+
+theorem alphaEquivR_iff_alphaEquivRFresh_direct (m n : Term Var) :
+    AlphaEquivR m n ↔ AlphaEquivRFresh m n := sorry
 
 end LambdaCalculus.Named.Untyped.Term
 

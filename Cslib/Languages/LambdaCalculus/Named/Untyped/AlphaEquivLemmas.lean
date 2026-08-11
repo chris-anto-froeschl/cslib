@@ -7,7 +7,6 @@ Authors: Chris Anto Fröschl
 module
 
 public import Cslib.Languages.LambdaCalculus.Named.Untyped.Properties
-public import Cslib.Languages.LambdaCalculus.Named.Untyped.SwapProperties
 
 /-! # The lemmas of Section 6.1 of [Crole2012]
 
@@ -27,116 +26,6 @@ universe u
 variable {Var : Type u} [DecidableEq Var] [HasFresh Var]
 
 namespace LambdaCalculus.Named.Untyped.Term
-
-/-- Lemma 6.1 [Crole2012]: Swap (transposition) preserves α-equivalence. -/
-lemma AlphaEquiv.swap_preserve {m m' : Term Var} {u v : Var} :
-  m =α m' → (m.swap u v) =α (m'.swap u v) := by
-    intro h1
-    by_cases h2 : u = v
-    · simp_all
-    · change u ≠ v at h2
-      induction h1 with
-      | var => simp_all [AlphaEquiv.refl]
-      | abs hm1 hm2 ih =>
-        rename_i z a b E E'
-        have z_h1 : z ≠ a := by simp_all
-        have z_h2 : z ≠ b := by simp_all
-        have h3 : a = u ∨ a = v ∨ (a ≠ u ∧ a ≠ v) := by grind
-        have h4 : b = u ∨ b = v ∨ (b ≠ u ∧ b ≠ v) := by grind
-        have h5 : z = u ∨ z = v ∨ (z ≠ u ∧ z ≠ v) := by grind
-        -- we've got 27 cases to consider
-        rcases h3 with ha | ha | ⟨hau, hav⟩
-        · rcases h4 with hb | hb | ⟨hbu, hbv⟩
-          · rcases h5 with hz | hz | ⟨hzu, hzv⟩
-            · simp_all
-            -- representative example 4 case of: a = u; b = u; z = v
-            · subst ha; subst hb; subst hz
-              exact alphaEquiv_swap_preserve_abs_a_eq_b_eq_u (by simp_all) ih h2
-            -- example 1 reuse
-            · exact alphaEquiv_swap_preserve_abs_fresh hm1 ih hzu hzv
-          · rcases h5 with hz | hz | ⟨hzu, hzv⟩
-            · simp_all
-            · simp_all
-            -- example 1 reuse
-            · exact alphaEquiv_swap_preserve_abs_fresh hm1 ih hzu hzv
-          · rcases h5 with hz | hz | ⟨hzu, hzv⟩
-            · simp_all
-            -- example 3 reuse
-            · subst ha; subst hz
-              apply AlphaEquiv.symm
-              exact (alphaEquiv_swap_preserve_abs_b_eq_u (by grind) (AlphaEquiv.symm ih) hbu hbv h2)
-            -- example 1 reuse
-            · exact alphaEquiv_swap_preserve_abs_fresh hm1 ih hzu hzv
-        · rcases h4 with hb | hb | ⟨hbu, hbv⟩
-          · rcases h5 with hz | hz | ⟨hzu, hzv⟩
-            · simp_all
-            · simp_all
-            -- example 1 reuse
-            · exact alphaEquiv_swap_preserve_abs_fresh hm1 ih hzu hzv
-          · rcases h5 with hz | hz | ⟨hzu, hzv⟩
-            -- example 4 reuse
-            · subst ha; subst hb; subst hz
-              nth_rw 1 [swap_comm]
-              nth_rw 2 [swap_comm]
-              symm at z_h2
-              nth_rw 1 [swap_comm] at ih
-              nth_rw 2 [swap_comm] at ih
-              apply alphaEquiv_swap_preserve_abs_a_eq_b_eq_u (by simp_all) ih z_h2
-            · simp_all
-            -- example 1 reuse
-            · exact alphaEquiv_swap_preserve_abs_fresh hm1 ih hzu hzv
-          · rcases h5 with hz | hz | ⟨hzu, hzv⟩
-            -- example 3 reuse
-            · subst ha; subst hz
-              nth_rw 1 [swap_comm]
-              nth_rw 2 [swap_comm]
-              apply AlphaEquiv.symm
-              symm at h2
-              apply alphaEquiv_swap_preserve_abs_b_eq_u (by simp_all) _ hbv hbu h2
-              apply AlphaEquiv.symm
-              nth_rw 1 [swap_comm]
-              nth_rw 2 [swap_comm]
-              exact ih
-            · simp_all
-            -- example 1 reuse
-            · exact alphaEquiv_swap_preserve_abs_fresh hm1 ih hzu hzv
-        · rcases h4 with hb | hb | ⟨hbu, hbv⟩
-          · rcases h5 with hz | hz | ⟨hzu, hzv⟩
-            · simp_all
-            -- representative example 3 case of: a ≠ u, v; b = u; z = v
-            · subst hb; subst hz
-              exact alphaEquiv_swap_preserve_abs_b_eq_u (by simp_all) ih hau hav h2
-            -- example 1 reuse
-            · exact alphaEquiv_swap_preserve_abs_fresh hm1 ih hzu hzv
-          · rcases h5 with hz | hz | ⟨hzu, hzv⟩
-            -- example 3 reuse
-            · subst hb; subst hz
-              nth_rw 1 [swap_comm]
-              nth_rw 2 [swap_comm]
-              symm at h2
-              apply alphaEquiv_swap_preserve_abs_b_eq_u (by simp_all) _ hav hau h2
-              nth_rw 1 [swap_comm]
-              nth_rw 2 [swap_comm]
-              exact ih
-            · simp_all
-            -- example 1 reuse
-            · exact alphaEquiv_swap_preserve_abs_fresh hm1 ih hzu hzv
-          · rcases h5 with hz | hz | ⟨hzu, hzv⟩
-            -- representative example 2 case of: a ≠ u, v; b ≠ u, v; z = u
-            -- use z' = v
-            · subst hz
-              exact alphaEquiv_swap_preserve_abs_fresh_z_eq_u hm1 ih hau hav hbu hbv
-            -- example 2 reuse after adjusting via swap commutativity and choosing z' = u
-            · rw [swap_comm (m := Term.abs a E) (x := u) (y := v),
-                  swap_comm (m := Term.abs b E') (x := u) (y := v)]
-              subst hz
-              nth_rw 1 [swap_comm] at ih
-              nth_rw 2 [swap_comm] at ih
-              exact alphaEquiv_swap_preserve_abs_fresh_z_eq_u hm1 ih hav hau hbv hbu
-            -- representative example 1 case of: z ≠ u, v
-            -- use z' = z
-            · exact alphaEquiv_swap_preserve_abs_fresh hm1 ih hzu hzv
-      | app hm1 hm2 ih1 ih2 => exact AlphaEquiv.app ih1 ih2
 
 omit [HasFresh Var] in
 /-- Lemma 6.2 part 1 [Crole2012]: Permutations on agreement set result in same term. -/
@@ -283,7 +172,7 @@ lemma alphaEquivR_swap_subst_var {m : Term Var} {a z : Var} (hz : z ∉ m.vars) 
   rw [swap_comm, swap_eq_rename_of_not_mem_vars hz]
   exact alphaEquivR_rename_subst_var hz
 
-/-- The `rename`-form of the paper's **Lemma 6.4**: the induction of
+/-- The `rename`-form of the paper's Lemma 6.4: the induction of
 `alphaEquivR_rename_subst_var` with every use of the rule `α` replaced by `α#`. -/
 lemma alphaEquivRFresh_rename_subst_var {m : Term Var} {x z : Var}
     (hz : z ∉ m.vars) :
