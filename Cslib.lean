@@ -163,6 +163,10 @@ public import Cslib.Languages.LambdaCalculus.Named.Untyped.AlphaEquivProperties
 public import Cslib.Languages.LambdaCalculus.Named.Untyped.Basic
 public import Cslib.Languages.LambdaCalculus.Named.Untyped.RenameProperties
 public import Cslib.Languages.LambdaCalculus.Named.Untyped.SwapProperties
+public import Cslib.Languages.LambdaCalculus.Unscoped.Untyped.BetaReduction
+public import Cslib.Languages.LambdaCalculus.Unscoped.Untyped.ChurchRosser
+public import Cslib.Languages.LambdaCalculus.Unscoped.Untyped.DeBruijnSyntax
+public import Cslib.Languages.LambdaCalculus.Unscoped.Untyped.ParallelReduction
 public import Cslib.Languages.Mech.Choreography.Basic
 public import Cslib.Languages.Mech.LocalComputation
 public import Cslib.Languages.StatefulProcesses.Basic
