@@ -532,8 +532,10 @@ lemma AlphaEquiv.abs_congr {m m' : Term Var} {x : Var} :
     intro h
     obtain ⟨y, hy⟩ := HasFresh.fresh_exists (m.vars ∪ m'.vars ∪ {x})
     apply AlphaEquiv.abs (y := y)
-    · grind
-    · apply AlphaEquiv.rename_preserve <;> grind
+    · simp_all
+    · apply AlphaEquiv.rename_preserve
+      · simp_all
+      · exact h
 
 omit [DecidableEq Var] [HasFresh Var] in
 lemma permute_permute (m : Term Var) (π π' : Equiv.Perm Var) :
@@ -560,7 +562,6 @@ theorem AlphaEquiv.abs_elim {m1 m2 : Term Var} {x1 x2 y : Var} :
         apply AlphaEquiv.rename_preserve <;> grind [AlphaEquiv.rename_preserve, rename_vars]
       grind [rename_concat, rename_vars]
 
--- TODO render closer on original
 /-- Transitivity of α-equivalence. -/
 theorem AlphaEquiv.trans {m n p : Term Var} :
     m =α n → n =α p → m =α p := by

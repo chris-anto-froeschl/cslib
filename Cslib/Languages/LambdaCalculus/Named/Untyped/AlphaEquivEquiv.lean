@@ -215,24 +215,19 @@ lemma alphaEquiv_of_alphaEquivR {m n : Term Var} : AlphaEquivR m n → AlphaEqui
   | abs_congr _ ih => exact AlphaEquiv.abs_congr ih
   | trans _ _ ih1 ih2 => exact ih1.trans ih2
   | app _ _ ih1 ih2 => exact AlphaEquiv.app ih1 ih2
-  -- The paper's `α` step: capture-avoiding replacement of a binder by an atom which does not
-  -- occur in the body is valid for permutation-based α-equivalence, `B([a]E) ∼p B([a']E{a'/a})`
-  -- for `a' ̸▹ a, E`.
-
-  -- The paper reduces this, by rule `pi`, to finding an atom `z ̸▹ a, a', E, E{a'/a}` with
-  -- `(z a) · E ∼p (z a') · E{a'/a}`, which is the statement `(∗∗)` it establishes by induction
-  -- on `E`.  Here `(∗∗)` is the one-variable instance `alphaEquiv_swap_subst_var` of Lemma 6.5. -/
   | alpha hx' =>
     rename_i x x' m
     have hxx' : x ≠ x' := by grind
     obtain ⟨z, hz⟩ := HasFresh.fresh_exists (m.vars ∪ (m.subst x (var x')).vars ∪ {x, x'})
     simp only [Finset.mem_union, Finset.mem_insert, Finset.mem_singleton, not_or] at hz
-    apply AlphaEquiv.abs (y := z) (by grind)
-    rw [← swap_eq_rename_of_not_mem_vars (m := m) (x := x) (by grind),
-      ← swap_eq_rename_of_not_mem_vars (m := m.subst x (var x')) (x := x') (by grind),
-      swap_comm (m := m), swap_comm (m := m.subst x (var x'))]
-    exact alphaEquiv_swap_subst_var (by grind) (by grind) hxx'
-      (by simp_all [vars_either_fv_or_bv])
+    apply AlphaEquiv.abs (y := z) (by simp_all)
+    -- Bring in form of induction result by replacing `rename`s with `swap`s
+    rw [← swap_eq_rename_of_not_mem_vars (m := m) (x := x) (by simp_all)]
+    rw [← swap_eq_rename_of_not_mem_vars (m := m.subst x (var x')) (x := x') (by simp_all)]
+    rw [swap_comm (m := m), swap_comm (m := m.subst x (var x'))]
+    -- Induction result statement already provided by special case of lemma 6.5
+    exact alphaEquiv_swap_subst_var
+      (by simp_all) (by simp_all) hxx' (by simp_all [vars_either_fv_or_bv])
 
 lemma alphaEquivR_of_alphaEquiv {m n : Term Var} : AlphaEquiv m n → AlphaEquivR m n := by
   intro h
