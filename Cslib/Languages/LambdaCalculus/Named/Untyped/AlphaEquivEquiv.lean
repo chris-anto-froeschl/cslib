@@ -240,7 +240,7 @@ lemma alphaEquivR_of_alphaEquiv {m n : Term Var} : AlphaEquiv m n → AlphaEquiv
     -- The induction hypothesis in the paper's swap form `(z a) · E ∼r (z b) · E'`.
     rw [← swap_eq_rename_of_not_mem_vars hz1, ← swap_eq_rename_of_not_mem_vars hz2] at ih
     rw [swap_comm (m := m1), swap_comm (m := m2)] at ih
-    -- Lemma 6.3, twice, together with `trs`.
+    -- Lemma 6.3, twice, together with `trans`.
     have hbodies : AlphaEquivR (m1.subst x1 (var z)) (m2.subst x2 (var z)) :=
       ((alphaEquivR_swap_subst_var hz1).symm.trans ih).trans (alphaEquivR_swap_subst_var hz2)
     -- Using `bcg`
@@ -251,7 +251,7 @@ lemma alphaEquivR_of_alphaEquiv {m n : Term Var} : AlphaEquiv m n → AlphaEquiv
       AlphaEquivR.alpha (by simp_all)
     have hbbzsubst: AlphaEquivR (abs x2 m2) (abs z (m2.subst x2 (var z))) :=
       AlphaEquivR.alpha (by simp_all)
-    -- and `sym`, `trs`.
+    -- and `sym`, `trans`.
     apply AlphaEquivR.symm at hbbzsubst
     apply AlphaEquivR.trans hbazsubst
     apply AlphaEquivR.trans hbsubstar
@@ -262,10 +262,68 @@ theorem alphaEquiv_iff_alphaEquivR (m n : Term Var) :
     AlphaEquiv m n ↔ AlphaEquivR m n := by
   exact ⟨alphaEquivR_of_alphaEquiv, alphaEquiv_of_alphaEquivR⟩
 
+/-- The cases are literally those of `alphaEquiv_of_alphaEquivR`, except that the rule
+`α` is replaced by `α#`. -/
+lemma alphaEquiv_of_alphaEquivRFresh {m n : Term Var} :
+    AlphaEquivRFresh m n → AlphaEquiv m n := by
+  intro h
+  induction h with
+  | refl => exact AlphaEquiv.refl _
+  | symm _ ih => exact ih.symm
+  | trans _ _ ih1 ih2 => exact ih1.trans ih2
+  | app _ _ ih1 ih2 => exact AlphaEquiv.app ih1 ih2
+  | abs_congr _ ih => exact AlphaEquiv.abs_congr ih
+  | alpha hx' =>
+    rename_i x x' m
+    have hxx' : x ≠ x' := by symm; simp_all
+    have hx'fv : x' ∉ m.fv := by simp_all
+    -- Pick an atom `z` occurring neither in `E` nor in `E{x'/x}`, and distinct from `x, x'`.
+    obtain ⟨z, hz⟩ := HasFresh.fresh_exists (m.vars ∪ (m[x := var x']).vars ∪ {x, x'})
+    rw [Finset.mem_union, Finset.mem_insert, Finset.mem_singleton, not_or] at hz
+    apply AlphaEquiv.abs (y := z) (by grind)
+    have hzm : z ∉ m.vars := by simp_all
+    -- With `z` fresh, both renamings are swaps, and the goal is the one-variable Lemma 6.5.
+    rw [← swap_eq_rename_of_not_mem_vars (m := m) (x := x) hzm]
+    rw [← swap_eq_rename_of_not_mem_vars (m := m.subst x (var x')) (x := x') (by grind)]
+    rw [swap_comm (m := m), swap_comm (m := m.subst x (var x'))]
+    exact alphaEquiv_swap_subst_var hzm (by simp_all) hxx' hx'fv
+
+/-- The steps are exactly those of the corresponding half of Theorem 4.4
+(`alphaEquivR_of_alphaEquiv`), with Lemma 6.4 used in place of Lemma 6.3, and with the two
+instances of `α` replaced by `α#`, which is legitimate because `z ̸▹ E, E'` implies `z # E, E'`. -/
+lemma alphaEquivRFresh_of_alphaEquiv {m n : Term Var} :
+    AlphaEquiv m n → AlphaEquivRFresh m n := by
+  intro h
+  induction h with
+  | var => exact AlphaEquivRFresh.refl
+  | app _ _ ih1 ih2 => exact AlphaEquivRFresh.app ih1 ih2
+  | @abs z x1 x2 m1 m2 hz hbody ih =>
+    have hz1 : z ∉ m1.vars := by simp_all
+    have hz2 : z ∉ m2.vars := by simp_all
+    rw [← swap_eq_rename_of_not_mem_vars hz1, ← swap_eq_rename_of_not_mem_vars hz2] at ih
+    rw [swap_comm (m := m1), swap_comm (m := m2)] at ih
+    -- Lemma 6.4, twice, together with `trans`.
+    have hbodies : AlphaEquivRFresh (m1.subst x1 (var z)) (m2.subst x2 (var z)) :=
+      ((alphaEquivRFresh_swap_subst_var hz1).symm.trans ih).trans
+        (alphaEquivRFresh_swap_subst_var hz2)
+    -- Using `bcg`
+    have hbsubstar: AlphaEquivRFresh (abs z (m1.subst x1 (var z))) (abs z (m2.subst x2 (var z))) :=
+      AlphaEquivRFresh.abs_congr hbodies
+    -- then the two instances of `α`,
+    have hbazsubst: AlphaEquivRFresh (abs x1 m1) (abs z (m1.subst x1 (var z))) :=
+      AlphaEquivRFresh.alpha (by simp_all [vars_either_fv_or_bv])
+    have hbbzsubst: AlphaEquivRFresh (abs x2 m2) (abs z (m2.subst x2 (var z))) :=
+      AlphaEquivRFresh.alpha (by simp_all [vars_either_fv_or_bv])
+    -- and `sym`, `trans`.
+    apply AlphaEquivRFresh.symm at hbbzsubst
+    apply AlphaEquivRFresh.trans hbazsubst
+    apply AlphaEquivRFresh.trans hbsubstar
+    exact hbbzsubst
+
 /-! ## Theorem 4.5 [Crole2012] -/
 theorem alphaEquiv_iff_alphaEquivRFresh (m n : Term Var) :
-    AlphaEquiv m n ↔ AlphaEquivRFresh m n := by
-  sorry
+    AlphaEquiv m n ↔ AlphaEquivRFresh m n :=
+  ⟨alphaEquivRFresh_of_alphaEquiv, alphaEquiv_of_alphaEquivRFresh⟩
 
 /-- **Theorem 4.6** [Crole2012].
 
