@@ -1,0 +1,16 @@
+{
+  "note": "Preserved Fuse editor snapshots. Some are older than the current branch; compare before restoring. Original branch contents were not overwritten.",
+  "drafts": [
+    {
+      "workspace_id": "4a9f726b-7b76-4b1a-847f-3c9dce50ad03",
+      "original_branch": "refs/heads/numina/theorem-42",
+      "original_blueprint_file": "blueprint/src/content.tex",
+      "blueprint_name": "theorem-42",
+      "project_subdir": "",
+      "saved_at": "2026-07-23 10:27:02.891799+00:00",
+      "revision": 1,
+      "audit_status": "file_absent",
+      "recovery_file": ".numina-recovery/2026-09-10/editor-drafts/4a9f726b-7b76-4b1a-847f-3c9dce50ad03.tex"
+    }
+  ]
+}
