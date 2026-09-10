@@ -101,12 +101,30 @@ lemma alphaEquivPFresh_of_alphaEquiv {m n : Term Var} : AlphaEquivPFresh m n →
 theorem alphaEquiv_iff_alphaEquivPFresh (m n : Term Var) : AlphaEquiv m n ↔ AlphaEquivPFresh m n :=
   ⟨alphaEquiv_of_alphaEquivPFresh, alphaEquivPFresh_of_alphaEquiv⟩
 
-/-
-/-! ## Theorem 4.2 [Crole2012] -/
-theorem alphaEquiv_iff_alphaEquivP1 (m n : Term Var) :
-    AlphaEquiv m n ↔ AlphaEquivP1 m n := by
+omit [HasFresh Var] in
+/-- The `∼p` side condition (`y ∉ vars ∪ {x1, x2}`) is stronger than the `∼¹p` side
+condition (`y ∉ vars`), so every `∼p` derivation is a `∼¹p` derivation. -/
+lemma alphaEquivP1_of_alphaEquiv {m n : Term Var} : AlphaEquiv m n → AlphaEquivP1 m n := by
+  intro h
+  induction h with
+  | var => exact AlphaEquivP1.var
+  | abs hy hrec ih =>
+    rename_i y x1 x2 m1 m2
+    have hy' : y ∉ m1.vars ∪ m2.vars := by
+      intro hmem
+      apply hy
+      exact Finset.mem_union_left {x1, x2} hmem
+    exact AlphaEquivP1.abs hy' ih
+  | app h1 h2 ih1 ih2 => exact AlphaEquivP1.app ih1 ih2
+
+lemma alphaEquiv_of_alphaEquivP1 {m n : Term Var} : AlphaEquivP1 m n → AlphaEquiv m n := by
   sorry
 
+/-! ## Theorem 4.2 [Crole2012] -/
+theorem alphaEquiv_iff_alphaEquivP1 (m n : Term Var) : AlphaEquiv m n ↔ AlphaEquivP1 m n :=
+  ⟨alphaEquivP1_of_alphaEquiv, alphaEquiv_of_alphaEquivP1⟩
+
+/-
 /-! ## Theorem 4.4 [Crole2012] -/
 theorem alphaEquiv_iff_alphaEquivR (m n : Term Var) :
     AlphaEquiv m n ↔ AlphaEquivR m n := by
