@@ -50,7 +50,7 @@ that it factors through the α-quotient.  The lifted map is `TermAlpha.toDB`.
 
 ## References
 
-* [Michael Norrish and René Vestergaard, *Proof Pearl: de Bruijn Terms Really Do Work*][NV2007]
+* [Michael Norrish and René Vestergaard, *Proof Pearl: de Bruijn Terms Really Do Work*][Norrish2007a]
 * [Andrew M. Pitts, *Alpha-structural recursion and induction*][Pitts2006]
 -/
 

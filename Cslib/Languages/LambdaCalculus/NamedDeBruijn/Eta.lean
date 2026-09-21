@@ -37,7 +37,7 @@ two relations have to be considered.
 
 ## References
 
-* [Michael Norrish and René Vestergaard, *Proof Pearl: de Bruijn Terms Really Do Work*][NV2007]
+* [Michael Norrish and René Vestergaard, *Proof Pearl: de Bruijn Terms Really Do Work*][Norrish2007a]
 * [Tobias Nipkow, *More Church-Rosser proofs (in Isabelle/HOL)*][Nipkow2001]
 -/
 

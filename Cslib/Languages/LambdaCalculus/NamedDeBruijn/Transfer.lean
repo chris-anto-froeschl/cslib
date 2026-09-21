@@ -54,7 +54,7 @@ needs is spelled out there and in `NamedDeBruijn-roadmap.md`.
 
 ## References
 
-* [Michael Norrish and René Vestergaard, *Proof Pearl: de Bruijn Terms Really Do Work*][NV2007]
+* [Michael Norrish and René Vestergaard, *Proof Pearl: de Bruijn Terms Really Do Work*][Norrish2007a]
 -/
 
 @[expose] public section

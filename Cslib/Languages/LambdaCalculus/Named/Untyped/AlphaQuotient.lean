@@ -46,7 +46,7 @@ here is only the quotient packaging:
 
 ## References
 
-* [Michael Norrish and René Vestergaard, *Proof Pearl: de Bruijn Terms Really Do Work*][NV2007]
+* [Michael Norrish and René Vestergaard, *Proof Pearl: de Bruijn Terms Really Do Work*][Norrish2007a]
 * [Michael Norrish, *Mechanising λ-calculus using a classical first order theory of terms with
   permutations*][Norrish2006]
 -/

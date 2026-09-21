@@ -10,15 +10,10 @@ public import Cslib.Languages.LambdaCalculus.Unscoped.Untyped.BetaReduction
 public import Mathlib.Data.Finset.Basic
 public import Mathlib.Data.Finset.Image
 
-/-! # Proof Pearl: de Bruijn terms really do work — the de Bruijn side (`dB` and `dB'`)
+/-! # de Bruijn
 
-This file is part of a formalisation of
-
-* Michael Norrish and René Vestergaard, *Proof Pearl: de Bruijn Terms Really Do Work*,
-  TPHOLs 2007.
-
-It covers the material of the paper's Section 2.2 (*de Bruijn's Anonymous Abstraction, using
-Indices*) and the first half of Section 4.1 (*An Intermediate Formalism: dB'*).
+Covers the material of the [Norrish2007a] Section 2.2 and the first half of
+Section 4.1.
 
 ## The paper's `dB` versus Cslib's `Unscoped.Untyped.Term`
 
@@ -58,8 +53,7 @@ lemmas `lift_var`, `nsub_var`, ... are the defining equations in the shape used 
 
 ## References
 
-* [Michael Norrish and René Vestergaard, *Proof Pearl: de Bruijn Terms Really Do Work*][NV2007]
-* [Tobias Nipkow, *More Church-Rosser proofs (in Isabelle/HOL)*][Nipkow2001]
+* [Michael Norrish and René Vestergaard, *Proof Pearl: de Bruijn Terms Really Do Work*][Norrish2007a]
 -/
 
 @[expose] public section
