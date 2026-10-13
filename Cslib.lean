@@ -248,6 +248,7 @@ public import Cslib.Languages.LambdaCalculus.Named.Untyped.AlphaQuotient
 public import Cslib.Languages.LambdaCalculus.Named.Untyped.Basic
 public import Cslib.Languages.LambdaCalculus.Named.Untyped.RenameProperties
 public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.DeBruijnPerm
+public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.Eta
 public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.FromTerm
 public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.Isomorphism
 public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.LiftingPermutation
