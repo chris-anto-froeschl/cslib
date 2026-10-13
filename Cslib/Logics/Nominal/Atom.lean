@@ -5,6 +5,7 @@ Authors: Bas Spitters
 -/
 module
 
+public import Cslib.Init
 public import Mathlib.Data.Finset.Basic
 public import Mathlib.Data.Finset.Empty
 public import Mathlib.Data.Finset.Lattice.Fold
