@@ -37,38 +37,6 @@ This file is ported from the `spitters/nominal-lean` repository.
 
 namespace Cslib.Logic.Nominal
 
-/-! ## Backward-Compatible Aliases
-
-These aliases provide backward compatibility for code that used the old
-`NominalAction` API. They are definitionally equal to the Mathlib equivalents. -/
-
-namespace NominalAction
-
-variable {α : Type*} [MulAction FinPerm α]
-
-/-- Backward-compatible alias for `π • x`. -/
-abbrev act (π : FinPerm) (x : α) : α := π • x
-
-@[simp] theorem one_act (x : α) : act (1 : FinPerm) x = x := one_smul FinPerm x
-
-theorem mul_act (π₁ π₂ : FinPerm) (x : α) : act (π₁ * π₂) x = act π₁ (act π₂ x) :=
-  mul_smul π₁ π₂ x
-
-@[simp] theorem inv_act_act (π : FinPerm) (x : α) : act π⁻¹ (act π x) = x :=
-  inv_smul_smul π x
-
-@[simp] theorem act_inv_act (π : FinPerm) (x : α) : act π (act π⁻¹ x) = x :=
-  smul_inv_smul π x
-
-/-- Backward-compatible alias: `act_one` = `one_smul`. -/
-theorem act_one (x : α) : act 1 x = x := one_smul FinPerm x
-
-/-- Backward-compatible alias: `act_mul` = `mul_smul`. -/
-theorem act_mul (π₁ π₂ : FinPerm) (x : α) : act (π₁ * π₂) x = act π₁ (act π₂ x) :=
-  mul_smul π₁ π₂ x
-
-end NominalAction
-
 /-- A set S supports an element x if every permutation fixing S pointwise
     also fixes x. -/
 def Supports {α : Type*} [MulAction FinPerm α] (s : Finset Atom) (x : α) : Prop :=

@@ -41,6 +41,7 @@ namespace Cslib.Logic.Nominal
 /-- Atoms are abstract names, represented as wrapped natural numbers.
     This provides a countably infinite supply of distinguishable names. -/
 structure Atom where
+  /-- The natural number that identifies the atom. -/
   val : ℕ
   deriving DecidableEq, Hashable, Repr, Ord
 
@@ -130,12 +131,6 @@ theorem freshN_disjoint (s : Finset Atom) (n : ℕ) :
   have hlt := fresh_val_gt ha
   simp only [fresh] at hlt
   omega
-
-/-- Two distinct atoms -/
-def a₀ : Atom := ⟨0⟩
-def a₁ : Atom := ⟨1⟩
-
-theorem a₀_ne_a₁ : a₀ ≠ a₁ := by decide
 
 end Atom
 

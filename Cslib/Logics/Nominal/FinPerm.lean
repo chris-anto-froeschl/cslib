@@ -150,13 +150,10 @@ noncomputable def swap (a b : Atom) : FinPerm :=
      · simp only [hab, ↓reduceIte, Finset.mem_insert, Finset.mem_singleton, not_or] at hc
        exact Equiv.swap_apply_of_ne_of_ne hc.1 hc.2⟩
 
-@[simp]
 theorem swap_apply_left (a b : Atom) : swap a b a = b := Equiv.swap_apply_left a b
 
-@[simp]
 theorem swap_apply_right (a b : Atom) : swap a b b = a := Equiv.swap_apply_right a b
 
-@[simp]
 theorem swap_apply_of_ne_of_ne {a b c : Atom} (hca : c ≠ a) (hcb : c ≠ b) :
     swap a b c = c := Equiv.swap_apply_of_ne_of_ne hca hcb
 
