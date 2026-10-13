@@ -1,15 +1,13 @@
 /-
-Copyright (c) 2024 CatCrypt Contributors. All rights reserved.
-Released under MIT license as described in the file LICENSE.
-Authors: CatCrypt Contributors
+Copyright (c) 2024 Bas Spitters. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Bas Spitters
 -/
 
 module
 
 public import Cslib.Logics.Nominal.Atom
 public import Mathlib.GroupTheory.Perm.Basic
-
-@[expose] public section
 
 /-!
 # Finite Permutations
@@ -32,16 +30,20 @@ directly (which requires `Fintype`). Instead, we define a predicate
 Key insight: in nominal set theory, we only work with *finitely-supported*
 permutations, even though the set of atoms is infinite.
 
+This file is ported from the `spitters/nominal-lean` repository.
+
 ## References
 
 * Pitts, *Nominal Sets: Names and Symmetry in Computer Science*,
   Cambridge University Press, 2013, Chapter 2.
-* Larsen and Schürmann, *Nominal State-Separating Proofs*, IACR ePrint 2025/598 — the SSProve
+* Larsen and Schürmann, *Nominal State-Separating Proofs*, IACR ePrint 2025/598, the SSProve
   `Nominal/` layer this development ports.
 * SSProve `theories/Crypt/nominal/Nominal.v`
 -/
 
-namespace CatCrypt.Nominal
+@[expose] public section
+
+namespace Cslib.Logic.Nominal
 
 open Equiv
 
@@ -177,4 +179,4 @@ theorem swap_inv (a b : Atom) : (swap a b)⁻¹ = swap a b :=
 
 end FinPerm
 
-end CatCrypt.Nominal
+end Cslib.Logic.Nominal

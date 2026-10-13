@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2024 CatCrypt Contributors. All rights reserved.
-Released under MIT license as described in the file LICENSE.
-Authors: CatCrypt Contributors
+Copyright (c) 2024 Bas Spitters. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Bas Spitters
 -/
 module
 
@@ -9,7 +9,7 @@ public import Mathlib.Data.Finset.Basic
 public import Mathlib.Data.Finset.Empty
 public import Mathlib.Data.Finset.Lattice.Fold
 public import Mathlib.Order.BoundedOrder.Basic
-public import Mathlib.Data.Countable.Defs
+public import Mathlib.Basic.Countable.Defs
 
 /-!
 # Atoms for Nominal Sets
@@ -24,17 +24,19 @@ supply of distinguishable names.
 * `Atom.fresh` - Generate a fresh atom not in a given finite set
 * `Atom.freshN` - Generate n fresh atoms
 
+This file is ported from the `spitters/nominal-lean` repository.
+
 ## References
 
 * Pitts, *Nominal Sets: Names and Symmetry in Computer Science*, Cambridge University Press, 2013.
-* Larsen and Schürmann, *Nominal State-Separating Proofs*, IACR ePrint 2025/598 — the SSProve
+* Larsen and Schürmann, *Nominal State-Separating Proofs*, IACR ePrint 2025/598, the SSProve
   `Nominal/` layer this development ports.
 * [SSProve Nominal Package](https://github.com/SSProve/ssprove)
 -/
 
 @[expose] public section
 
-namespace CatCrypt.Nominal
+namespace Cslib.Logic.Nominal
 
 /-- Atoms are abstract names, represented as wrapped natural numbers.
     This provides a countably infinite supply of distinguishable names. -/
@@ -137,4 +139,4 @@ theorem a₀_ne_a₁ : a₀ ≠ a₁ := by decide
 
 end Atom
 
-end CatCrypt.Nominal
+end Cslib.Logic.Nominal

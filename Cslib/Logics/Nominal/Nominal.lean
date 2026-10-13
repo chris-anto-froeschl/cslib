@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2024 CatCrypt Contributors. All rights reserved.
-Released under MIT license as described in the file LICENSE.
-Authors: CatCrypt Contributors
+Copyright (c) 2024 Bas Spitters. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Bas Spitters
 -/
 
 module
@@ -22,18 +22,20 @@ The permutation action uses Mathlib's `MulAction FinPerm α`, giving access to
 `π • x` notation, `one_smul`, `mul_smul`, `inv_smul_smul`, `smul_inv_smul`,
 orbit/stabilizer theory, etc.
 
+This file is ported from the `spitters/nominal-lean` repository.
+
 ## References
 
 * Pitts, *Nominal Sets: Names and Symmetry in Computer Science*,
   Cambridge University Press, 2013, Chapters 2-3.
-* Larsen and Schürmann, *Nominal State-Separating Proofs*, IACR ePrint 2025/598 — the SSProve
+* Larsen and Schürmann, *Nominal State-Separating Proofs*, IACR ePrint 2025/598, the SSProve
   `Nominal/` layer this development ports.
 * SSProve `theories/Crypt/nominal/Nominal.v`
 -/
 
 @[expose] public section
 
-namespace CatCrypt.Nominal
+namespace Cslib.Logic.Nominal
 
 /-! ## Backward-Compatible Aliases
 
@@ -80,8 +82,7 @@ def HasFinSupp {α : Type*} [MulAction FinPerm α] (x : α) : Prop :=
     and support transforms equivariantly under permutations.
 
     The equivariance property `supp_equivariant` is essential for reasoning about
-    how supports transform under permutation actions, particularly for the move
-    operation in nominal CatCrypt. -/
+    how supports transform under permutation actions. -/
 class NomSet (α : Type*) extends MulAction FinPerm α where
   /-- The support of an element -/
   supp : α → Finset Atom
@@ -139,7 +140,7 @@ instance {α β : Type*} [NomSet α] [NomSet β] : NomSet (α × β) where
     · apply NomSet.act_eq_of_supp_fixed
       intro a ha; exact h a (Or.inr ha)
   supp_equivariant := fun p π => by
-    show NomSet.supp (π • p.1) ∪ NomSet.supp (π • p.2) = _
+    change NomSet.supp (π • p.1) ∪ NomSet.supp (π • p.2) = _
     rw [NomSet.supp_act_eq_image, NomSet.supp_act_eq_image, Finset.image_union]
 
-end CatCrypt.Nominal
+end Cslib.Logic.Nominal
