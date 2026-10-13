@@ -247,6 +247,7 @@ public import Cslib.Languages.LambdaCalculus.Named.Untyped.AlphaEquivVariants.Sw
 public import Cslib.Languages.LambdaCalculus.Named.Untyped.AlphaQuotient
 public import Cslib.Languages.LambdaCalculus.Named.Untyped.Basic
 public import Cslib.Languages.LambdaCalculus.Named.Untyped.RenameProperties
+public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.PureDeBruijn
 public import Cslib.Languages.LambdaCalculus.Unscoped.Untyped.BetaReduction
 public import Cslib.Languages.LambdaCalculus.Unscoped.Untyped.ChurchRosser
 public import Cslib.Languages.LambdaCalculus.Unscoped.Untyped.DeBruijnSyntax
