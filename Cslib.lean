@@ -253,6 +253,7 @@ public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.FromTerm
 public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.Isomorphism
 public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.LiftingPermutation
 public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.PureDeBruijn
+public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.Transfer
 public import Cslib.Languages.LambdaCalculus.Unscoped.Untyped.BetaReduction
 public import Cslib.Languages.LambdaCalculus.Unscoped.Untyped.ChurchRosser
 public import Cslib.Languages.LambdaCalculus.Unscoped.Untyped.DeBruijnSyntax
