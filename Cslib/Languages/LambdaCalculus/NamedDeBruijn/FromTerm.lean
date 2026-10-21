@@ -70,7 +70,7 @@ variable {Var : Type u} [DecidableEq Var] [HasFresh Var]
 omit [HasFresh Var] in
 /-- A free variable is a variable. -/
 theorem mem_vars_of_mem_fv {n : Term Var} {a : Var} (h : a ∈ n.fv) : a ∈ n.vars := by
-  rw [vars_either_fv_or_bv]; exact Finset.mem_union_left _ h
+  rw [vars_eq_fv_union_bv]; exact Finset.mem_union_left _ h
 
 /-- Abstracting a term over `y` is α-equivalent to abstracting the swapped term over a variable
 `x` that is not free in it.  This is the named analogue of the second disjunct of
@@ -90,7 +90,7 @@ theorem abs_swap_alphaEquiv {n : Term Var} {x y : Var} (hx : x ∉ n.fv) :
     · subst hay; simp
     · simp [Equiv.swap_apply_def, hax, hay, haz]
   have h' := permute_alphaEquiv_of_eqOn_fv n _ _ h
-  rw [permute_swap, ← permute_trans, permute_swap, permute_swap] at h'
+  rw [permute_swap, ← permute_permute, permute_swap, permute_swap] at h'
   exact h'
 
 end Cslib.LambdaCalculus.Named.Untyped.Term
