@@ -147,4 +147,8 @@ theorem isomorphism :
     ∃ f : TermAlpha Atom ≃ Term, ∀ M N, BetaAlpha M N ↔ Beta (f M) (f N) :=
   ⟨dbEquiv, fun _ _ => betaAlpha_iff_beta⟩
 
+/-- Theorem 20 as a Mathlib relation isomorphism between `→β` on `Λα` and `→d` on `dB`. -/
+noncomputable def dbRelIso : BetaAlpha (Var := Atom) ≃r Beta :=
+  ⟨dbEquiv, betaAlpha_iff_beta.symm⟩
+
 end Cslib.LambdaCalculus.NamedDeBruijn
