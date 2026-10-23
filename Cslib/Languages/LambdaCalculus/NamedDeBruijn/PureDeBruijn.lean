@@ -63,8 +63,6 @@ namespace Cslib.LambdaCalculus.Unscoped.Untyped
 
 namespace Term
 
-/-! ### Section 2.2 — Nipkow's `lift` and `nsub` (Figure 2) -/
-
 /-- `lift t k` (paper, Figure 2): add one to all free indices of `t` that are at least `k`.
 This is Cslib's `Term.incre 1 k`. -/
 abbrev lift (t : Term) (k : ℕ) : Term := incre 1 k t
@@ -95,11 +93,9 @@ abbrev nsub (z : Term) (k : ℕ) (t : Term) : Term := t.sub k z
 theorem nsub_abs (z : Term) (k : ℕ) (t : Term) :
     nsub z k (abs t) = abs (nsub (lift z 0) (k + 1) t) := abs_sub_zero
 
-/-! ### Section 4.1 — a clean notion of substitution (Definition 4) -/
-
-/-- **Definition 4** (A clean notion of substitution for `dB`): `dsub z k t` substitutes `z` for
-the index `k` in `t`, *without* decrementing the other free indices.  This is Cslib's
-`Term.subst`, with the arguments in the order used by the paper. -/
+/-- **Definition 4**: `dsub z k t` (the paper's `sub`) substitutes `z` for the index `k` in `t`,
+without decrementing the other free indices.  An alias for `Term.subst` with the paper's argument
+order. -/
 abbrev dsub (z : Term) (k : ℕ) (t : Term) : Term := subst k z t
 
 @[simp] theorem dsub_var (z : Term) (k i : ℕ) : dsub z k (var i) = if i = k then z else var i :=
@@ -111,11 +107,7 @@ abbrev dsub (z : Term) (k : ℕ) (t : Term) : Term := subst k z t
 @[simp] theorem dsub_abs (z : Term) (k : ℕ) (t : Term) :
     dsub z k (abs t) = abs (dsub (lift z 0) (k + 1) t) := rfl
 
-/-! ### Free indices -/
-
-/-- The set of free indices of a de Bruijn term (HOL `dFV_def`).  Under the bijection between
-strings and numbers this is the support of `t` in the nominal set of de Bruijn terms, see
-`Cslib.Languages.LambdaCalculus.NamedDeBruijn.DeBruijnPerm`. -/
+/-- The set of free indices of a de Bruijn term (HOL `dFV_def`). -/
 def dFV : Term → Finset ℕ
   | var i => {i}
   | app t u => dFV t ∪ dFV u
@@ -164,7 +156,7 @@ theorem mem_dFV_lift (t : Term) (n j : ℕ) :
           rw [e2] at h2
           exact Or.inr ⟨by omega, h2⟩
 
-/-- The free indices of a `dsub`-substitution (HOL `IN_dFV_sub`). -/
+/-- The free indices of a `dsub`-substitution (compare HOL `dFVs_sub`). -/
 theorem mem_dFV_dsub (z : Term) (k : ℕ) (t : Term) (j : ℕ) :
     j ∈ dFV (dsub z k t) ↔ (j ∈ dFV t ∧ j ≠ k) ∨ (k ∈ dFV t ∧ j ∈ dFV z) := by
   induction t generalizing z k j with
@@ -195,13 +187,8 @@ theorem dsub_of_not_mem_dFV {t : Term} {k : ℕ} (h : k ∉ dFV t) (z : Term) : 
       simp only [dsub_app, ih₁ h.1, ih₂ h.2]
   | abs t ih => simp only [mem_dFV_abs] at h; simp only [dsub_abs, ih h]
 
-/-! ### Size
-
-The structural size of a de Bruijn term (HOL `dbsize`).  `sizeOf` cannot be used for the
-complete-induction argument behind the surjectivity of `f` (`fromTerm_surjective`), because it
-counts the numerals stored in `dV`-nodes, which `lift` and `sub` change. -/
-
-/-- The number of nodes of a de Bruijn term (HOL `dbsize`). -/
+/-- The number of nodes of a de Bruijn term (HOL `dbsize`).  Unlike `sizeOf`, it does not count
+the numerals in `var` nodes, which `lift` and `dsub` change. -/
 def dbsize : Term → ℕ
   | var _ => 1
   | app t u => dbsize t + dbsize u + 1
@@ -225,16 +212,12 @@ def dbsize : Term → ℕ
   | app t u iht ihu => simp [iht, ihu]
   | abs t ih => simp only [dsub_abs, dbsize_abs, lift_var]; split_ifs <;> simp [ih]
 
-/-! ### Section 4.1 — abstraction over an index (Definition 5) -/
-
-/-- **Definition 5** (Abstraction over an index): `dLAM i t = dABS (sub (dV 0) (i+1) (lift t 0))`.
-
-This constructor is deliberately *not* injective: `dLAM i t` and `dLAM j u` may be equal for
-`i ≠ j`, exactly as `LAM` is not injective on the α-quotiented type `Λα`. -/
+/-- **Definition 5**: `dLAM i t` abstracts the free index `i` of `t`.  Like `LAM` on `Λα`, it is
+not injective. -/
 def dLAM (i : ℕ) (t : Term) : Term := abs (dsub (var 0) (i + 1) (lift t 0))
 
-/-- **Lemma 6**, main induction (HOL `onto_lemma`): if `i` is not free in `t`, then `t` is a
-substitution of `dV n` for `i` in a lifted term.  Proved by structural induction on `t`. -/
+/-- The induction behind Lemma 6 (HOL `onto_lemma`): if `i` is not free in `t`, then `t` is a
+substitution of `dV n` for `i` in a lifted term. -/
 theorem onto_lemma (t : Term) (i n : ℕ) (h : i ∉ dFV t) :
     ∃ t₀, t = dsub (var n) i (lift t₀ n) := by
   induction t generalizing i n with
@@ -292,16 +275,14 @@ theorem dfresh_exists (t : Term) : ∃ i, i ∉ dFV t := by
   obtain ⟨j, hj⟩ := dFV_bounded t
   exact ⟨j, fun h => absurd (hj j h) (lt_irrefl j)⟩
 
-/-- **Lemma 6** (`dABS` terms as `dLAM` terms, HOL `dABS_renamed`): if `i` is not among the free
-indices of `dABS t`, then `dABS t = dLAM i t₀` for some `t₀`; by the definition of `dLAM` and
-injectivity of `dABS` we further know `t = sub (dV 0) (i+1) (lift t₀ 0)`. -/
+/-- **Lemma 6** (HOL `dABS_renamed`): if `i` is not free in `dABS t`, then `dABS t = dLAM i t₀`
+for some `t₀`. -/
 theorem dABS_renamed {t : Term} {i : ℕ} (h : i ∉ dFV (abs t)) : ∃ t₀, abs t = dLAM i t₀ := by
   have h' : i + 1 ∉ dFV t := by simpa using h
   obtain ⟨t₀, ht⟩ := onto_lemma t (i + 1) 0 h'
   exact ⟨t₀, by rw [dLAM, ← ht]⟩
 
-/-- HOL `db_cases'`: a cases theorem for `dB` based around `dLAM` rather than `dABS`.  This is
-what makes `dB'` "syntactic sugar for `dB` that looks like `λNα`" (paper, Section 2). -/
+/-- Case analysis on `dB` with `dLAM` in place of `dABS` (HOL `db_cases'`). -/
 theorem db_cases' (t : Term) :
     (∃ i, t = var i) ∨ (∃ t₀ t₁, t = app t₀ t₁) ∨ (∃ i t₀, t = dLAM i t₀) := by
   match t with
@@ -312,8 +293,7 @@ theorem db_cases' (t : Term) :
     obtain ⟨t₀, h⟩ := dABS_renamed hi
     exact Or.inr (Or.inr ⟨i, t₀, h⟩)
 
-/-- The free indices of a `dLAM`-abstraction (HOL `dFVs_dLAM`); this is the key fact that makes
-the nominal recursion principle applicable in `Theorem 11`. -/
+/-- The free indices of a `dLAM`-abstraction (HOL `dFVs_dLAM`). -/
 theorem dFV_dLAM (i : ℕ) (t : Term) : dFV (dLAM i t) = (dFV t).erase i := by
   ext j
   simp only [dLAM, mem_dFV_abs, mem_dFV_dsub, mem_dFV_lift, mem_dFV_var, Finset.mem_erase]
@@ -383,15 +363,9 @@ theorem dsub_dLAM {z : Term} {i j : ℕ} {t : Term} (hij : i ≠ j) (hi : i ∉ 
 
 end Term
 
-/-! ### Section 4.1 — β-reduction for `dB'` (Definition 7)
-
-Nipkow's relation `→d` (paper, Definition 1) is already available in Cslib as
-`Cslib.LambdaCalculus.Unscoped.Untyped.Beta`; note that its contraction rule
-`Beta.red : Beta (app (abs t) s) (t.sub 0 s)` is literally `dAPP (dABS t) s →d nsub s 0 t`. -/
-
 open Term in
-/-- **Definition 7** (`dB'` β-reduction, `→d'`).  It mimics the traditional statement in the
-λ-calculus for both contraction and congruence rules, using `dLAM` in place of `dABS`. -/
+/-- **Definition 7**: β-reduction `→d'` of `dB'`, stated like β on `Λα` with `dLAM` in place of
+`LAM`. -/
 inductive DBeta' : Term → Term → Prop where
   /-- Contraction: `dAPP (dLAM i t) u →d' sub u i t`. -/
   | red (i : ℕ) (t u : Term) : DBeta' (app (dLAM i t) u) (dsub u i t)

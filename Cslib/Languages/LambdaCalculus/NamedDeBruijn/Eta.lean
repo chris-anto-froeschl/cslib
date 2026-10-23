@@ -100,7 +100,7 @@ theorem lift_nsub {t : Term} {n : ℕ} (u : Term) (h : n ∉ dFV t) : lift (nsub
       simp only [nsub_abs, lift_abs, ih _ h]
 
 /-- HOL `nipkow_eta_lemma`: if `i` is not free in `t`, then `nsub _ i t` does not depend on the
-term being substituted — it merely decrements the free indices of `t`. -/
+term being substituted; it merely decrements the free indices of `t`. -/
 theorem nsub_indep_of_not_mem_dFV {t : Term} {i : ℕ} (h : i ∉ dFV t) (u v : Term) :
     nsub u i t = nsub v i t := by
   induction t generalizing u v i with
@@ -117,7 +117,7 @@ theorem nsub_indep_of_not_mem_dFV {t : Term} {i : ℕ} (h : i ∉ dFV t) (u v : 
       simp only [nsub_abs]
       rw [ih h (lift u 0) (lift v 0)]
 
-/-- `→ne` is preserved by permutations (HOL `neta_dpm`); the proof uses **Lemma 17**. -/
+/-- `→ne` is preserved by permutations (HOL `neta_dpm`); the proof uses Lemma 17. -/
 theorem _root_.Cslib.LambdaCalculus.Unscoped.Untyped.NEta.dpm {t u : Term} (h : NEta t u)
     (π : FinPerm) : NEta (π • t) (π • u) := by
   induction h generalizing π with
@@ -138,14 +138,14 @@ theorem _root_.Cslib.LambdaCalculus.Unscoped.Untyped.NEta.dpm {t u : Term} (h : 
   | appR _ _ ih => simp only [dpm_app]; exact NEta.appR _ (ih π)
   | abs _ ih => simp only [dpm_abs]; exact NEta.abs (ih _)
 
-/-- `→ne` is equivariant (HOL `neta_dpm`); the proof uses **Lemma 17**. -/
+/-- `→ne` is equivariant (HOL `neta_dpm`); the proof uses Lemma 17. -/
 theorem _root_.Cslib.LambdaCalculus.Unscoped.Untyped.NEta.equivariant (π : FinPerm) (t u : Term) :
     NEta (π • t) (π • u) ↔ NEta t u := by
   refine ⟨fun h => ?_, fun h => h.dpm π⟩
   have h2 := h.dpm π⁻¹
   rwa [inv_smul_smul, inv_smul_smul] at h2
 
-/-- `→e` is preserved by permutations (HOL `eta_dpm`); the proof uses **Theorem 10**. -/
+/-- `→e` is preserved by permutations (HOL `eta_dpm`); the proof uses Theorem 10. -/
 theorem _root_.Cslib.LambdaCalculus.Unscoped.Untyped.DEta.dpm {t u : Term} (h : DEta t u)
     (π : FinPerm) : DEta (π • t) (π • u) := by
   induction h generalizing π with
@@ -161,7 +161,7 @@ theorem _root_.Cslib.LambdaCalculus.Unscoped.Untyped.DEta.dpm {t u : Term} (h : 
   | appR _ _ ih => simp only [dpm_app]; exact DEta.appR _ (ih π)
   | lam i _ ih => rw [dpm_dLAM, dpm_dLAM]; exact DEta.lam _ (ih _)
 
-/-- `→e` is equivariant (HOL `eta_dpm_eqn`); the proof uses **Theorem 10**. -/
+/-- `→e` is equivariant (HOL `eta_dpm_eqn`); the proof uses Theorem 10. -/
 theorem _root_.Cslib.LambdaCalculus.Unscoped.Untyped.DEta.equivariant (π : FinPerm) (t u : Term) :
     DEta (π • t) (π • u) ↔ DEta t u := by
   refine ⟨fun h => ?_, fun h => h.dpm π⟩
@@ -207,7 +207,7 @@ theorem neta_dLAM_redex {t : Term} {i : ℕ} (h : i ∉ dFV t) :
   have hred := NEta.red (t := lift t 0) t h0
   rwa [nsub_lift] at hred
 
-/-- `→e ⊆ →ne` (HOL `eta_neta`).  The congruence case is **Theorem 15**. -/
+/-- `→e ⊆ →ne` (HOL `eta_neta`).  The congruence case is Theorem 15. -/
 theorem neta_of_deta {t u : Term} (h : DEta t u) : NEta t u := by
   induction h with
   | red i h0 => exact neta_dLAM_redex h0
@@ -217,7 +217,7 @@ theorem neta_of_deta {t u : Term} (h : DEta t u) : NEta t u := by
       exact (dABS_rules_are_dLAM_compatible NEta NEta.equivariant).mp
         (fun _ _ h => NEta.abs h) i _ _ ih
 
-/-- `→ne ⊆ →e` (HOL `neta_eta`).  The congruence case is **Theorem 15**. -/
+/-- `→ne ⊆ →e` (HOL `neta_eta`).  The congruence case is Theorem 15. -/
 theorem deta_of_neta {t u : Term} (h : NEta t u) : DEta t u := by
   induction h with
   | red u h0 => exact deta_nABS_redex u h0
@@ -227,7 +227,7 @@ theorem deta_of_neta {t u : Term} (h : NEta t u) : DEta t u := by
       exact (dABS_rules_are_dLAM_compatible DEta DEta.equivariant).mpr
         (fun i _ _ h => DEta.lam i h) _ _ ih
 
-/-- The η-analogue of **Theorem 19** (HOL `neta_eq_eta`): `→e` and `→ne` coincide. -/
+/-- The η-analogue of Theorem 19 (HOL `neta_eq_eta`): `→e` and `→ne` coincide. -/
 theorem deta_iff_neta {t u : Term} : DEta t u ↔ NEta t u :=
   ⟨neta_of_deta, deta_of_neta⟩
 
@@ -297,7 +297,7 @@ theorem etaAlpha_iff_deta {M N : TermAlpha Atom} :
     EtaAlpha M N ↔ DEta (toDB M) (toDB N) :=
   ⟨deta_of_etaAlpha, fun h => etaAlpha_of_deta h M N rfl rfl⟩
 
-/-- The η-analogue of **Theorem 20**: the bijection `f` is a homomorphism for η-reduction as
+/-- The η-analogue of Theorem 20: the bijection `f` is a homomorphism for η-reduction as
 well, so `dB` with Nipkow's `→ne` is isomorphic to `λNα` with η-reduction. -/
 theorem etaAlpha_iff_neta {M N : TermAlpha Atom} :
     EtaAlpha M N ↔ NEta (toDB M) (toDB N) := by

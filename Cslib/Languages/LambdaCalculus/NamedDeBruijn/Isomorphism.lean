@@ -24,8 +24,8 @@ between `dB` and `λNα`).
 
 * `Term.dbeta'_of_beta` : **Lemma 16**, `→d ⊆ →d'`.
 * `Term.dpm_nsub` : **Lemma 17**, the "rather incomprehensible" behaviour of `nsub` under a
-  permutation — note the odd way in which the permutation `π` does not affect the index `i`.
-* `Term.Beta.equivariant` : `→d` is equivariant, by rule induction using **Lemma 17**.
+  permutation; note the odd way in which the permutation `π` does not affect the index `i`.
+* `Term.Beta.equivariant` : `→d` is equivariant, by rule induction using Lemma 17.
 * `Term.beta_of_dbeta'` : **Lemma 18**, `→d' ⊆ →d`.
 * `Term.dbeta'_iff_beta` : **Theorem 19**, `t →d' u ⇔ t →d u`.
 * `NamedDeBruijn.betaAlpha_iff_beta`, `NamedDeBruijn.isomorphism` : **Theorem 20**,
@@ -47,11 +47,7 @@ open Cslib.Logic.Nominal
 
 namespace Term
 
-/-! ### Lemma 16 — `→d ⊆ →d'` -/
-
-/-- **Lemma 16** (`→d ⊆ →d'`).  A rule induction over the definition of `→d`: the redex case is
-handled by **Lemma 13**, the `dAPP` congruence cases are immediate, and the `dABS` congruence
-case follows from **Lemma 14** and **Theorem 10** via **Theorem 15**. -/
+/-- **Lemma 16**: `→d ⊆ →d'`.  The `abs` case is Theorem 15. -/
 theorem dbeta'_of_beta {t u : Term} (h : Beta t u) : DBeta' t u := by
   induction h with
   | red t' s => exact dbeta'_dABS_redex t' s
@@ -61,11 +57,7 @@ theorem dbeta'_of_beta {t u : Term} (h : Beta t u) : DBeta' t u := by
       exact (dABS_rules_are_dLAM_compatible DBeta'
         (fun π _ _ => DBeta'.equivariant π)).mpr (fun i _ _ h => DBeta'.lam i h) _ _ ih
 
-/-! ### Lemma 17 and the equivariance of `→d` -/
-
-/-- **Lemma 17** (HOL `dpm_nsub`): `π · (nsub t i u) = nsub (π · t) i (inc i (π) · u)`.
-By structural induction on `u`; the `dV` case requires a number of splits on the ordering
-possibilities between the index of the variable and `i`, and the `dABS` case uses **Lemma 9**. -/
+/-- **Lemma 17** (HOL `dpm_nsub`): `π · (nsub t i u) = nsub (π · t) i (inc i (π) · u)`. -/
 theorem dpm_nsub (π : FinPerm) (t : Term) (i : ℕ) (u : Term) :
     π • (nsub t i u) = nsub (π • t) i ((incPerm i π) • u) := by
   induction u generalizing π t i with
@@ -103,7 +95,7 @@ theorem dpm_nsub (π : FinPerm) (t : Term) (i : ℕ) (u : Term) :
   | app u₁ u₂ ih₁ ih₂ => simp only [nsub_app, dpm_app, ih₁, ih₂]
   | abs u ih => simp only [nsub_abs, dpm_abs, ih, incPerm_zero_incPerm, lift_dpm]
 
-/-- `→d` is equivariant, by rule induction using **Lemma 17** (HOL `dbeta_dpm`). -/
+/-- `→d` is equivariant, by rule induction using Lemma 17 (HOL `dbeta_dpm`). -/
 theorem Beta.dpm {t u : Term} (h : Beta t u) (π : FinPerm) : Beta (π • t) (π • u) := by
   induction h generalizing π with
   | red t' s =>
@@ -114,17 +106,13 @@ theorem Beta.dpm {t u : Term} (h : Beta t u) (π : FinPerm) : Beta (π • t) (�
   | appR _ ih => simp only [dpm_app]; exact Beta.appR (ih π)
   | abs _ ih => simp only [dpm_abs]; exact Beta.abs (ih _)
 
-/-- Equivariance of `→d` in if-and-only-if form, as required by **Theorem 15**. -/
+/-- Equivariance of `→d` in if-and-only-if form, as required by Theorem 15. -/
 theorem Beta.equivariant (π : FinPerm) (t u : Term) : Beta (π • t) (π • u) ↔ Beta t u := by
   refine ⟨fun h => ?_, fun h => Beta.dpm h π⟩
   have h2 := Beta.dpm h π⁻¹
   rwa [inv_smul_smul, inv_smul_smul] at h2
 
-/-! ### Lemma 18 and Theorem 19 -/
-
-/-- **Lemma 18** (`→d' ⊆ →d`).  The redex case is `beta_dLAM_redex`, the application
-congruences are immediate, and the abstraction congruence follows from **Theorem 15** applied to
-the equivariant relation `→d`. -/
+/-- **Lemma 18**: `→d' ⊆ →d`.  The `dLAM` case is Theorem 15 applied to `→d`. -/
 theorem beta_of_dbeta' {t u : Term} (h : DBeta' t u) : Beta t u := by
   induction h with
   | red i t u => exact beta_dLAM_redex i t u
@@ -148,17 +136,13 @@ open Cslib.Logic.Nominal
 open Cslib.LambdaCalculus.Unscoped.Untyped
 open Cslib.LambdaCalculus.Named.Untyped (TermAlpha BetaAlpha)
 
-/-- **Theorem 20**, homomorphism part: `M →β N ⇔ f M →d f N`.  Immediate from **Theorem 12** and
-**Theorem 19**. -/
+/-- **Theorem 20**, homomorphism part: `M →β N ⇔ f M →d f N`. -/
 theorem betaAlpha_iff_beta {M N : TermAlpha Atom} :
     BetaAlpha M N ↔ Beta (toDB M) (toDB N) := by
   rw [betaAlpha_iff_dbeta', Term.dbeta'_iff_beta]
 
-/-- **Theorem 20** (Isomorphism): the types `dB` and `λNα`, with their respective reduction
-relations `→d` and `→β`, are isomorphic, as witnessed by the bijective `f`.
-
-This is the statement of isomorphism from equation (3) of the paper: a bijection that is
-homomorphic for the two reduction relations. -/
+/-- **Theorem 20**: `dB` with `→d` and `λNα` with `→β` are isomorphic in the sense of
+equation (3). -/
 theorem isomorphism :
     ∃ f : TermAlpha Atom ≃ Term, ∀ M N, BetaAlpha M N ↔ Beta (f M) (f N) :=
   ⟨dbEquiv, fun _ _ => betaAlpha_iff_beta⟩

@@ -61,8 +61,6 @@ open Cslib.Logic.Nominal
 
 namespace Term
 
-/-! ### Guarded increment of atoms (HOL `ginc`) -/
-
 /-- `gincAtom g a` (HOL `ginc_def`): the atom `a` is untouched if the corresponding index is
 less than the guard `g`, and bumped by one otherwise. -/
 def gincAtom (g : ℕ) (a : Atom) : Atom := if a.val < g then a else ⟨a.val + 1⟩
@@ -91,11 +89,8 @@ theorem gincAtom_gdecAtom {g : ℕ} {a : Atom} (h : a.val ≠ g) : gincAtom g (g
     simp
     omega
 
-/-! ### Definition 8 — incrementing a permutation -/
-
-/-- The underlying function of `incPerm`: the permutation `π`, transported along the guarded
-increment `gincAtom g` and extended by the identity at the guard.  Compare HOL
-`lswapstr_inc_pm`, the characterisation of what an incremented permutation does to a string. -/
+/-- The underlying function of `incPerm`: `π` transported along `gincAtom g`, and the identity at
+the guard (compare HOL `lswapstr_inc_pm`). -/
 def incFun (g : ℕ) (π : FinPerm) (a : Atom) : Atom :=
   if a.val = g then a else gincAtom g (π (gdecAtom g a))
 
@@ -114,8 +109,8 @@ theorem incFun_inv_incFun (g : ℕ) (π : FinPerm) (a : Atom) :
   have h := incFun_incFun_inv g π⁻¹ a
   rwa [inv_inv] at h
 
-/-- **Definition 8** (increment of a permutation), for an arbitrary guard `g`.  `incPerm 0` is
-the paper's `inc`, and `incPerm n` is the paper's `inc n` used in **Lemma 9**. -/
+/-- **Definition 8**: the increment `inc g` of a permutation, for an arbitrary guard `g`.
+`incPerm 0` is the paper's `inc`. -/
 def incPerm (g : ℕ) (π : FinPerm) : FinPerm :=
   ⟨⟨incFun g π, incFun g π⁻¹, incFun_inv_incFun g π, incFun_incFun_inv g π⟩,
     (π.suppWitness.image (gincAtom g)) ∪ {⟨g⟩}, by
@@ -161,9 +156,7 @@ theorem incPerm_mul (g : ℕ) (π₁ π₂ : FinPerm) :
   · simp [h]
   · simp only [h, ite_false, gincAtom_ne, gdecAtom_gincAtom]
 
-/-- The tedious index-manoeuvring result needed in the `dABS` case of **Lemma 9**:
-`inc 0 (inc n π) = inc (n+1) (inc 0 π)` (an equality of permutations, not just an extensional
-one; compare the paper's remark after Lemma 9). -/
+/-- The `dABS` case of Lemma 9: `inc 0 (inc n π) = inc (n+1) (inc 0 π)`. -/
 theorem incPerm_zero_incPerm (n : ℕ) (π : FinPerm) :
     incPerm 0 (incPerm n π) = incPerm (n + 1) (incPerm 0 π) := by
   refine FinPerm.ext (fun a => ?_)
@@ -171,11 +164,8 @@ theorem incPerm_zero_incPerm (n : ℕ) (π : FinPerm) :
     Nat.le_zero_eq]
   split_ifs <;> apply Atom.ext <;> (try dsimp only at *) <;> omega
 
-/-! ### Definition 8 — the permutation action on `dB` -/
-
-/-- **Definition 8** (Permutation for `dB`).  When a permutation passes through an abstraction
-the free variables it acts on sit at different index positions, so the permutation has to be
-incremented. -/
+/-- **Definition 8**: the permutation action on `dB`.  Under `abs` the free indices move up by
+one, so the permutation is incremented. -/
 def dpm (π : FinPerm) : Term → Term
   | var i => var (π (Atom.ofNat i)).val
   | app t u => app (dpm π t) (dpm π u)
@@ -289,8 +279,6 @@ instance : NomSet Term where
   supp t := (dFV t).image Atom.ofNat
   supp_supports := supports_dFV
   supp_equivariant := dFV_dpm
-
-/-! ### Lemma 9 and Theorem 10 -/
 
 /-- **Lemma 9** (Permutations and `lift`): `lift (π · t) n = (inc n π) · (lift t n)`. -/
 theorem lift_dpm (π : FinPerm) (t : Term) (n : ℕ) :

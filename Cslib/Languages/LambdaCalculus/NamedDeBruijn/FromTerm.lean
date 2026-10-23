@@ -35,8 +35,8 @@ and its existence is obtained from Pitts' α-structural recursion principle, whi
 
 Cslib has no α-structural recursion principle for `Λα`, so we take the equivalent route that is
 available: `fromTerm` is defined by ordinary structural recursion on the *raw* syntax `Λvar`
-(where the equations (5) hold by definition), and `fromTerm_respects_alpha` — whose proof is the
-place where the nominal machinery of `DeBruijnPerm` is used, exactly as in the paper — shows
+(where the equations (5) hold by definition), and `fromTerm_respects_alpha` (whose proof is the
+place where the nominal machinery of `DeBruijnPerm` is used, exactly as in the paper) shows
 that it factors through the α-quotient.  The lifted map is `TermAlpha.toDB`.
 
 ## Main statements
@@ -57,11 +57,6 @@ that it factors through the α-quotient.  The lifted map is `TermAlpha.toDB`.
 -/
 
 @[expose] public section
-
-/-! ### Two auxiliary facts about the named syntax
-
-These are facts about `Λvar`/`Λα` alone; they are the named counterparts of the de Bruijn
-lemma `Term.dLAM_eq_dLAM_iff` and are what makes the injectivity proof below go through. -/
 
 namespace Cslib.LambdaCalculus.Named.Untyped.Term
 
@@ -113,8 +108,8 @@ instance : HasFresh Atom := .ofSucc (fun a => ⟨a.val + 1⟩) (fun a => by
 /-- `Λvar` over atoms: the raw named syntax of equation (1). -/
 abbrev Lam := Cslib.LambdaCalculus.Named.Untyped.Term Atom
 
-/-- The map `f` of equation (5), defined on the raw syntax.  Since `Λvar` *is* a free algebra,
-this is an ordinary structural recursion; the equations (5) hold definitionally. -/
+/-- The map `f` of equation (5), by structural recursion on the raw syntax, so that the
+equations (5) hold by definition. -/
 def fromTerm : Lam → Term
   | .var x => .var x.val
   | .app m n => .app (fromTerm m) (fromTerm n)
@@ -127,12 +122,6 @@ def fromTerm : Lam → Term
 
 @[simp] theorem fromTerm_abs (x : Atom) (m : Lam) :
     fromTerm (.abs x m) = Term.dLAM x.val (fromTerm m) := rfl
-
-/-! ### `f` is equivariant
-
-The permutation action on `Λvar` is `Term.permute`, that on `dB` is `Term.dpm`; `f` intertwines
-them.  (In the paper this is immediate from the α-structural recursion principle used to define
-`f`; here it is a one-line induction.) -/
 
 /-- `f` is equivariant: `f (π · M) = π · f M`. -/
 theorem fromTerm_permute (π : FinPerm) (m : Lam) :
@@ -154,8 +143,8 @@ theorem fromTerm_swap (a b : Atom) (m : Lam) :
   rw [← Cslib.LambdaCalculus.Named.Untyped.Term.permute_swap, ← fromTerm_permute]
   rfl
 
-/-- HOL `IN_dFVs_fromTerm`: the free indices of `f M` are the (codes of the) free variables
-of `M`. -/
+/-- The free indices of `f M` are the codes of the free variables of `M` (membership form of
+HOL `dFVs_fromTerm`). -/
 theorem mem_dFV_fromTerm (m : Lam) (k : ℕ) :
     k ∈ Term.dFV (fromTerm m) ↔ Atom.ofNat k ∈ m.fv := by
   induction m with
@@ -180,12 +169,8 @@ theorem dFV_fromTerm (m : Lam) : Term.dFV (fromTerm m) = m.fv.image Atom.val := 
   simp only [mem_dFV_fromTerm, Finset.mem_image]
   exact ⟨fun h => ⟨Atom.ofNat k, h, rfl⟩, fun ⟨a, ha, hk⟩ => by rw [← hk]; rwa [Atom.val_ofNat]⟩
 
-/-! ### `f` respects α-equivalence -/
-
 /-- Renaming the abstracted variable by a transposition: if `x` is not free in `M`, then
-`dLAM x̂ (f ((x y) · M)) = dLAM ŷ (f M)`.  This is the image under `f` of the equation
-`LAM x ((x y) · M) = LAM y M` of `Λα`, and its proof is the nominal argument of the paper:
-the transposition supports `dLAM ŷ (f M)` because `x̂ ∉ dFV (f M) \ {ŷ}`. -/
+`dLAM x̂ (f ((x y) · M)) = dLAM ŷ (f M)`, the image under `f` of `LAM x ((x y) · M) = LAM y M`. -/
 theorem dLAM_swap_eq (m : Lam) (x y : Atom) (hx : x ∉ m.fv) :
     Term.dLAM x.val (fromTerm (m.swap x y)) = Term.dLAM y.val (fromTerm m) := by
   have hsupp : (FinPerm.swap x y) • Term.dLAM y.val (fromTerm m)
@@ -214,8 +199,7 @@ theorem dLAM_rename_eq (m : Lam) (y z : Atom) (hz : z ∉ m.vars) :
   exact dLAM_swap_eq m z y
     (fun hc => hz (Cslib.LambdaCalculus.Named.Untyped.Term.mem_vars_of_mem_fv hc))
 
-/-- The map `f` respects α-equivalence, hence factors through `Λα`.  This is where the nominal
-results of the previous file (in particular `Term.dpm_dLAM` and `Term.dFV_dLAM`) are used. -/
+/-- The map `f` respects α-equivalence, hence factors through `Λα`. -/
 theorem fromTerm_respects_alpha {m n : Lam} (h : m =α n) : fromTerm m = fromTerm n := by
   induction h with
   | var => rfl
@@ -226,8 +210,6 @@ theorem fromTerm_respects_alpha {m n : Lam} (h : m =α n) : fromTerm m = fromTer
       simp only [Finset.mem_union, not_or] at hy
       change Term.dLAM x1.val (fromTerm m1) = Term.dLAM x2.val (fromTerm m2)
       rw [← dLAM_rename_eq m1 x1 y hy.1.1, ← dLAM_rename_eq m2 x2 y hy.1.2, ih]
-
-/-! ### `f` is injective -/
 
 /-- Injectivity of `f` (HOL `fromTerm_11`), by structural induction.  The `abs` case is exactly
 the de Bruijn lemma `Term.dLAM_eq_dLAM_iff` transported along `abs_swap_alphaEquiv`. -/
@@ -306,10 +288,8 @@ theorem fromTerm_dsub (m n : Lam) (x : Atom) :
           dLAM_rename_eq m' y z hzm]
         rfl
 
-/-- Surjectivity of `f` (HOL `fromTerm_onto`), by complete induction on the size of the de
-Bruijn term onto which a value in `Λα` maps.  The `dABS` case is **Lemma 6**
-(`Term.dABS_renamed`): every `dABS`-term is a `dLAM`-term, and `dLAM` adds exactly one node,
-so the induction on `Term.dbsize` goes through. -/
+/-- Surjectivity of `f` (HOL `fromTerm_onto`), by complete induction on `Term.dbsize`.  The
+`abs` case uses Lemma 6 (`Term.dABS_renamed`). -/
 theorem fromTerm_surjective (t : Term) : ∃ m : Lam, fromTerm m = t := by
   suffices h : ∀ k : ℕ, ∀ t : Term, Term.dbsize t ≤ k → ∃ m : Lam, fromTerm m = t by
     exact h (Term.dbsize t) t le_rfl
@@ -339,12 +319,6 @@ theorem fromTerm_surjective (t : Term) : ∃ m : Lam, fromTerm m = t := by
           exact ⟨.abs (Atom.ofNat i) m₀, by
             change Term.dLAM (Atom.ofNat i).val (fromTerm m₀) = _
             rw [hm₀, Atom.val_ofNat, ← ht₀]⟩
-
-/-! ### Inversion lemmas for `f`
-
-Because `f` is a bijection, the shape of `f M` determines the shape of `M` up to
-α-equivalence.  These are the raw-syntax inversion lemmas; they are lifted to `Λα` below and
-are what drives the "←" direction of Theorem 12 and of its η-analogue. -/
 
 /-- Applying a transposition twice is the identity. -/
 theorem swap_apply_swap_apply (a b c : Atom) :
@@ -424,7 +398,7 @@ noncomputable def dbEquiv : TermAlpha Atom ≃ Term where
         (fromTerm_alphaEquiv_iff.mp (fromTerm_surjective (fromTerm m)).choose_spec)
   right_inv := fun t => (fromTerm_surjective t).choose_spec
 
-/-- `f` is injective on `Λα` (the injectivity half of **Theorem 11**). -/
+/-- `f` is injective on `Λα` (the injectivity half of Theorem 11). -/
 theorem toDB_injective {M N : TermAlpha Atom} (h : toDB M = toDB N) : M = N := by
   induction M using TermAlpha.ind with
   | _ m =>
@@ -455,7 +429,7 @@ theorem toDB_eq_dLAM {M : TermAlpha Atom} {i : ℕ} {d : Term} (h : toDB M = Ter
     obtain ⟨m₀, halpha, h₀⟩ := fromTerm_eq_dLAM h
     exact ⟨⟦m₀⟧α, TermAlpha.mk_eq_mk.mpr halpha, h₀⟩
 
-/-- The "→" half of **Theorem 12**: a rule induction on `→βα`; the contraction case is exactly
+/-- The "→" half of Theorem 12: a rule induction on `→βα`; the contraction case is exactly
 `fromTerm_dsub`. -/
 theorem dbeta'_of_betaAlpha {M N : TermAlpha Atom} (h : BetaAlpha M N) :
     DBeta' (toDB M) (toDB N) := by
@@ -465,9 +439,7 @@ theorem dbeta'_of_betaAlpha {M N : TermAlpha Atom} (h : BetaAlpha M N) :
   | appR Z _ ih => simpa using DBeta'.appR (toDB Z) ih
   | abs x _ ih => simpa using DBeta'.lam x.val ih
 
-/-- The "←" half of **Theorem 12**: a rule induction on `→d'`, generalised over the preimages
-of the two de Bruijn terms.  Each case uses the inversion lemmas above to recover the shape of
-the preimage, and injectivity of `f` to pin it down. -/
+/-- The "←" half of Theorem 12: a rule induction on `→d'`, using the inversion lemmas for `f`. -/
 theorem betaAlpha_of_dbeta' : ∀ {t u : Term}, DBeta' t u →
     ∀ M N : TermAlpha Atom, toDB M = t → toDB N = u → BetaAlpha M N := by
   intro t u h
@@ -500,8 +472,7 @@ theorem betaAlpha_of_dbeta' : ∀ {t u : Term}, DBeta' t u →
       obtain ⟨N₀, rfl, k₀⟩ := toDB_eq_dLAM hN
       exact BetaAlpha.abs _ (ih M₀ N₀ h₀ k₀)
 
-/-- **Theorem 12**: `M →β N ⇔ f M →d' f N`.  Two rule inductions, both relying on
-`fromTerm_dsub`. -/
+/-- **Theorem 12**: `M →β N ⇔ f M →d' f N`. -/
 theorem betaAlpha_iff_dbeta' {M N : TermAlpha Atom} :
     BetaAlpha M N ↔ DBeta' (toDB M) (toDB N) :=
   ⟨dbeta'_of_betaAlpha, fun h => betaAlpha_of_dbeta' h M N rfl rfl⟩

@@ -49,10 +49,8 @@ open Cslib.Logic.Nominal
 
 namespace Term
 
-/-! ### Lemma 13 and the alternative redex rules -/
-
 /-- **Lemma 13** (HOL `sub_nsub`): for `n ≤ i`,
-`sub u i t = nsub u n (sub (dV n) (i+1) (lift t n))`.  Proved by structural induction on `t`. -/
+`sub u i t = nsub u n (sub (dV n) (i+1) (lift t n))`. -/
 theorem dsub_eq_nsub (u : Term) (i n : ℕ) (t : Term) (h : n ≤ i) :
     dsub u i t = nsub u n (dsub (var n) (i + 1) (lift t n)) := by
   induction t generalizing u i n with
@@ -67,7 +65,7 @@ theorem dsub_eq_nsub (u : Term) (i n : ℕ) (t : Term) (h : n ≤ i) :
       exact congrArg abs (ih (lift u 0) (i + 1) (n + 1) (by omega))
 
 /-- Nipkow's relation `→d` does reduce `→d'`-redexes in the correct way (HOL `alt_dbeta_rule`):
-`dAPP (dLAM i t) u →d sub u i t`.  Immediate from **Lemma 13** with `n = 0`. -/
+`dAPP (dLAM i t) u →d sub u i t`.  Lemma 13 with `n = 0`. -/
 theorem beta_dLAM_redex (i : ℕ) (t u : Term) : Beta (app (dLAM i t) u) (dsub u i t) := by
   rw [dsub_eq_nsub u i 0 t (Nat.zero_le i)]
   exact Beta.red _ _
@@ -80,8 +78,6 @@ theorem dbeta'_dABS_redex (t u : Term) : DBeta' (app (abs t) u) (nsub u 0 t) := 
   have ht' : t = dsub (var 0) (i + 1) (lift t₀ 0) := Term.abs.inj ht
   rw [ht, ht', ← dsub_eq_nsub u i 0 t₀ (Nat.zero_le i)]
   exact DBeta'.red i t₀ u
-
-/-! ### Lemma 14 — lifting is a permutation -/
 
 /-- The lifting permutation (HOL `lifting_pm_def`).  Given a lower bound `lim` and an upper
 bound `n`, `liftingPerm lim n` is the cycle that maps `î` to `i+1` for `lim ≤ i ≤ n`, maps
@@ -131,9 +127,8 @@ theorem liftingPerm_apply (lim n i : ℕ) :
       else if i = n + 1 then Atom.ofNat lim
       else Atom.ofNat i := rfl
 
-/-- Another tedious index-manoeuvring result (HOL `inc_pm0_lifting_pm`), needed in the `dABS`
-case of **Lemma 14**: `inc 0 (lifting_pm (m, n)) = lifting_pm (m+1, n+1)`.  As the paper notes,
-this one thankfully does not need to be generalised to `inc i`. -/
+/-- The `dABS` case of Lemma 14 (HOL `inc_pm0_lifting_pm`):
+`inc 0 (lifting_pm (m, n)) = lifting_pm (m+1, n+1)`. -/
 theorem incPerm_zero_liftingPerm (m n : ℕ) :
     incPerm 0 (liftingPerm m n) = liftingPerm (m + 1) (n + 1) := by
   refine FinPerm.ext (fun a => ?_)
@@ -200,13 +195,8 @@ theorem incPerm_zero_swap (i j : ℕ) :
         simp only [Atom.ofNat]
         omega
 
-/-- Substitution of a fresh index is also a permutation; together with `lift_is_dpm` this is
-what turns the `dLAM`-body of `dABS t = dLAM i t₀` into a permutation of `t₀`
-(HOL `fresh_dpm_sub`, `dLAM_alt_dpm`).
-
-Note that the freshness hypothesis is on the index `i` being substituted *in*, not on the index
-`j` being substituted *for*: substituting `dV i` for `j` in a term in which `i` does not occur
-free is exactly the transposition `[i ↔ j]`. -/
+/-- Substituting `dV i` for `j` in a term in which `i` is not free is the transposition
+`[i ↔ j]` (HOL `fresh_dpm_sub`, `dLAM_alt_dpm`). -/
 theorem dsub_var_eq_dpm {t : Term} {i j : ℕ} (h : i ∉ dFV t) :
     dsub (var i) j t = (FinPerm.swap (Atom.ofNat i) (Atom.ofNat j)) • t := by
   induction t generalizing i j with
@@ -229,9 +219,8 @@ theorem dsub_var_eq_dpm {t : Term} {i j : ℕ} (h : i ∉ dFV t) :
       simp only [Nat.not_lt_zero, ite_false]
       exact congrArg abs (ih h)
 
-/-- Putting **Lemma 14** and `dsub_var_eq_dpm` together: `dLAM i t` is `dABS` applied to a
-permutation of `t`, and the permutation only depends on `i` and on a bound `n` for the free
-indices of `t` — not on `t` itself.  This uniformity is what makes **Theorem 15** work. -/
+/-- Lemma 14 and `dsub_var_eq_dpm` together: `dLAM i t` is `dABS` of a permutation of `t` that
+depends only on `i` and on a bound `n` for the free indices of `t`. -/
 theorem dLAM_eq_abs_dpm (i n : ℕ) (t : Term) (h : ∀ k ∈ dFV t, k ≤ n) :
     dLAM i t =
       abs ((FinPerm.swap (Atom.ofNat 0) (Atom.ofNat (i + 1)) * liftingPerm 0 n) • t) := by
@@ -239,8 +228,6 @@ theorem dLAM_eq_abs_dpm (i n : ℕ) (t : Term) (h : ∀ k ∈ dFV t, k ≤ n) :
     simp only [mem_dFV_lift]
     rintro (⟨hlt, _⟩ | ⟨hlt, _⟩) <;> omega
   rw [dLAM, dsub_var_eq_dpm h0, lift_eq_dpm t n h 0, mul_smul]
-
-/-! ### `dLAM` is injective up to a swap -/
 
 /-- Lifting is injective (HOL `lift_11`). -/
 theorem lift_inj {t u : Term} {n : ℕ} (h : lift t n = lift u n) : t = u := by
@@ -292,7 +279,7 @@ theorem dpm_left_cancel {π : FinPerm} {t u : Term} (h : π • t = π • u) : 
   have h' := congrArg (fun x : Term => π⁻¹ • x) h
   simpa only [inv_smul_smul] using h'
 
-/-- The heart of `dLAM_eq_dLAM_iff`: two transposed lifts agree only if the two bodies are
+/-- The main step of `dLAM_eq_dLAM_iff`: two transposed lifts agree only if the two bodies are
 related by the transposition `[i ↔ j]` and `i` is fresh for the second one. -/
 theorem swap_lift_eq_aux {i j : ℕ} {t u : Term} (hij : i ≠ j)
     (h : (FinPerm.swap (Atom.ofNat 0) (Atom.ofNat (i + 1))) • lift t 0
@@ -340,9 +327,8 @@ theorem swap_lift_eq_aux {i j : ℕ} {t u : Term} (hij : i ≠ j)
   rw [← incPerm_zero_swap, ← lift_dpm] at hAρ
   exact lift_inj hAρ
 
-/-- `dLAM` is injective up to a transposition of the two abstracted indices (HOL `dLAM_11`,
-the analogue of `LAM_eq_thm` for `Λα`).  This is the fact that makes `dB'` behave exactly like
-the α-quotiented syntax. -/
+/-- `dLAM` is injective up to a transposition of the two abstracted indices, like `LAM` on
+`Λα`. -/
 theorem dLAM_eq_dLAM_iff {i j : ℕ} {t u : Term} :
     dLAM i t = dLAM j u ↔
       (i = j ∧ t = u) ∨
@@ -366,12 +352,9 @@ theorem dLAM_eq_dLAM_iff {i j : ℕ} {t u : Term} :
       rw [dpm_dLAM, FinPerm.swap_apply_right] at hsupp
       exact hsupp
 
-/-! ### Theorem 15 -/
-
 /-- **Theorem 15** (Abstraction Congruences Correspond): if `R` is equivariant, then the
 `dABS`-congruence rule and the `dLAM`-congruence rule for `R` are equivalent
-(HOL `dABS_rules_are_dLAM_compatible`).  The generality of the statement is what makes it
-reusable for η-reduction in Section 4.4. -/
+(HOL `dABS_rules_are_dLAM_compatible`). -/
 theorem dABS_rules_are_dLAM_compatible (R : Term → Term → Prop)
     (hR : ∀ (π : FinPerm) (t u : Term), R (π • t) (π • u) ↔ R t u) :
     (∀ t u, R t u → R (abs t) (abs u)) ↔ (∀ i t u, R t u → R (dLAM i t) (dLAM i u)) := by
