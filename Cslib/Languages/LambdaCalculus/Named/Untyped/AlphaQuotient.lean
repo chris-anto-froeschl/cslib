@@ -17,10 +17,10 @@ This file provides the *named* side of the isomorphism of
 
 namely the type `Λα` of the paper's Section 2.1 and the reduction system `λNα` of its Table 1:
 the quotient of the raw syntax `Λvar` by α-equivalence, with substitution and β-reduction
-defined *directly on the quotient* (as in Norrish [12] and Pitts [14]).
+defined *directly on the quotient*.
 
 Cslib already provides the raw syntax `Λvar` (`Named.Untyped.Term`), capture-avoiding
-substitution on it, α-equivalence (`Term.AlphaEquiv`, Definition 3.1 of Crole) and the proofs
+substitution on it, α-equivalence (`Term.AlphaEquiv`) and the proofs
 that α-equivalence is an equivalence relation and is respected by substitution.  What is added
 here is only the quotient packaging:
 
@@ -48,8 +48,6 @@ here is only the quotient packaging:
 
 * [Michael Norrish and René Vestergaard, *Proof Pearl: de Bruijn Terms Really Do
   Work*][Norrish2007a]
-* [Michael Norrish, *Mechanising λ-calculus using a classical first order theory of terms with
-  permutations*][Norrish2006]
 -/
 
 @[expose] public section
@@ -62,9 +60,7 @@ variable {Var : Type u} [DecidableEq Var] [HasFresh Var]
 
 namespace LambdaCalculus.Named.Untyped
 
-/-- α-equivalence, packaged as a `Setoid` (the underlying equivalence relation is
-`Term.AlphaEquiv`, i.e. Definition 3.1 of Crole; the three components are `AlphaEquiv.refl`,
-`AlphaEquiv.symm` and `AlphaEquiv.trans`). -/
+/-- `Term.AlphaEquiv` α-equivalence packaged as a `Setoid`. -/
 def Term.alphaSetoid (Var : Type u) [DecidableEq Var] [HasFresh Var] : Setoid (Term Var) where
   r := Term.AlphaEquiv
   iseqv := ⟨Term.AlphaEquiv.refl, Term.AlphaEquiv.symm, Term.AlphaEquiv.trans⟩
@@ -113,8 +109,9 @@ def subst (M : TermAlpha Var) (x : Var) (N : TermAlpha Var) : TermAlpha Var :=
 
 end TermAlpha
 
-/-- β-reduction of `λNα` (paper, Table 1): defined directly on the α-quotiented type, with the
-contraction rule using the quotient-level substitution. -/
+/-- β-reduction of `λNα` (paper, Table 1), on the α-quotiented type. The paper takes its rules
+as known; these are the usual ones, as in HOL's `compat_closure beta`. Its de Bruijn counterpart
+is Definition 7 (`DBeta'`), and Theorem 12 says that `f` maps one onto the other. -/
 inductive BetaAlpha : TermAlpha Var → TermAlpha Var → Prop where
   /-- Contraction of a β-redex. -/
   | red (x : Var) (M N : TermAlpha Var) :
