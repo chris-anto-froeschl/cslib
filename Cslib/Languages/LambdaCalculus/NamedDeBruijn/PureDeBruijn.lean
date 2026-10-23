@@ -67,30 +67,30 @@ namespace Term
 This is Cslib's `Term.incre 1 k`. -/
 abbrev lift (t : Term) (k : ℕ) : Term := incre 1 k t
 
-@[simp] theorem lift_var (i k : ℕ) : lift (var i) k = if i < k then var i else var (i + 1) := by
+@[simp] lemma lift_var (i k : ℕ) : lift (var i) k = if i < k then var i else var (i + 1) := by
   by_cases h : k ≤ i <;> simp [lift, incre, h]
 
-@[simp] theorem lift_app (t u : Term) (k : ℕ) : lift (app t u) k = app (lift t k) (lift u k) :=
+@[simp] lemma lift_app (t u : Term) (k : ℕ) : lift (app t u) k = app (lift t k) (lift u k) :=
   rfl
 
-@[simp] theorem lift_abs (t : Term) (k : ℕ) : lift (abs t) k = abs (lift t (k + 1)) := rfl
+@[simp] lemma lift_abs (t : Term) (k : ℕ) : lift (abs t) k = abs (lift t (k + 1)) := rfl
 
 /-- `nsub z k t` (paper, Figure 2): Nipkow's substitution, which simultaneously substitutes `z`
 for the index `k` and decrements all larger free indices.  This is Cslib's `Term.sub`, with the
 arguments in the order used by the paper. -/
 abbrev nsub (z : Term) (k : ℕ) (t : Term) : Term := t.sub k z
 
-@[simp] theorem nsub_var (z : Term) (k i : ℕ) :
+@[simp] lemma nsub_var (z : Term) (k i : ℕ) :
     nsub z k (var i) = if k < i then var (i - 1) else if i = k then z else var i := by
   rcases lt_trichotomy i k with h | h | h
   · simp [nsub, var_lt_sub h, Nat.not_lt.mpr h.le, Nat.ne_of_lt h]
   · simp [nsub, h]
   · simp [nsub, var_gt_sub h, h]
 
-@[simp] theorem nsub_app (z : Term) (k : ℕ) (t u : Term) :
+@[simp] lemma nsub_app (z : Term) (k : ℕ) (t u : Term) :
     nsub z k (app t u) = app (nsub z k t) (nsub z k u) := rfl
 
-theorem nsub_abs (z : Term) (k : ℕ) (t : Term) :
+lemma nsub_abs (z : Term) (k : ℕ) (t : Term) :
     nsub z k (abs t) = abs (nsub (lift z 0) (k + 1) t) := abs_sub_zero
 
 /-- **Definition 4**: `dsub z k t` (the paper's `sub`) substitutes `z` for the index `k` in `t`,
@@ -98,13 +98,13 @@ without decrementing the other free indices.  An alias for `Term.subst` with the
 order. -/
 abbrev dsub (z : Term) (k : ℕ) (t : Term) : Term := subst k z t
 
-@[simp] theorem dsub_var (z : Term) (k i : ℕ) : dsub z k (var i) = if i = k then z else var i :=
+@[simp] lemma dsub_var (z : Term) (k i : ℕ) : dsub z k (var i) = if i = k then z else var i :=
   rfl
 
-@[simp] theorem dsub_app (z : Term) (k : ℕ) (t u : Term) :
+@[simp] lemma dsub_app (z : Term) (k : ℕ) (t u : Term) :
     dsub z k (app t u) = app (dsub z k t) (dsub z k u) := rfl
 
-@[simp] theorem dsub_abs (z : Term) (k : ℕ) (t : Term) :
+@[simp] lemma dsub_abs (z : Term) (k : ℕ) (t : Term) :
     dsub z k (abs t) = abs (dsub (lift z 0) (k + 1) t) := rfl
 
 /-- The set of free indices of a de Bruijn term (HOL `dFV_def`). -/
@@ -113,14 +113,14 @@ def dFV : Term → Finset ℕ
   | app t u => dFV t ∪ dFV u
   | abs t => ((dFV t).erase 0).image (· - 1)
 
-@[simp] theorem mem_dFV_var (i j : ℕ) : j ∈ dFV (var i) ↔ i = j := by
+@[simp] lemma mem_dFV_var (i j : ℕ) : j ∈ dFV (var i) ↔ i = j := by
   simp [dFV, eq_comm]
 
-@[simp] theorem mem_dFV_app (t u : Term) (j : ℕ) : j ∈ dFV (app t u) ↔ j ∈ dFV t ∨ j ∈ dFV u := by
+@[simp] lemma mem_dFV_app (t u : Term) (j : ℕ) : j ∈ dFV (app t u) ↔ j ∈ dFV t ∨ j ∈ dFV u := by
   simp [dFV]
 
 /-- HOL `IN_dFV_thm`, the `dABS` case. -/
-@[simp] theorem mem_dFV_abs (t : Term) (j : ℕ) : j ∈ dFV (abs t) ↔ j + 1 ∈ dFV t := by
+@[simp] lemma mem_dFV_abs (t : Term) (j : ℕ) : j ∈ dFV (abs t) ↔ j + 1 ∈ dFV t := by
   constructor
   · intro h
     simp only [dFV, Finset.mem_image, Finset.mem_erase] at h
@@ -132,7 +132,7 @@ def dFV : Term → Finset ℕ
     exact ⟨j + 1, ⟨by omega, h⟩, by omega⟩
 
 /-- The free indices of a lifted term (HOL `IN_dFV_lift`). -/
-theorem mem_dFV_lift (t : Term) (n j : ℕ) :
+lemma mem_dFV_lift (t : Term) (n j : ℕ) :
     j ∈ dFV (lift t n) ↔ (j < n ∧ j ∈ dFV t) ∨ (n < j ∧ j - 1 ∈ dFV t) := by
   induction t generalizing n j with
   | var i =>
@@ -157,7 +157,7 @@ theorem mem_dFV_lift (t : Term) (n j : ℕ) :
           exact Or.inr ⟨by omega, h2⟩
 
 /-- The free indices of a `dsub`-substitution (compare HOL `dFVs_sub`). -/
-theorem mem_dFV_dsub (z : Term) (k : ℕ) (t : Term) (j : ℕ) :
+lemma mem_dFV_dsub (z : Term) (k : ℕ) (t : Term) (j : ℕ) :
     j ∈ dFV (dsub z k t) ↔ (j ∈ dFV t ∧ j ≠ k) ∨ (k ∈ dFV t ∧ j ∈ dFV z) := by
   induction t generalizing z k j with
   | var i =>
@@ -179,7 +179,7 @@ theorem mem_dFV_dsub (z : Term) (k : ℕ) (t : Term) (j : ℕ) :
         · exact Or.inr ⟨h1, Or.inr ⟨by omega, by simpa using h2⟩⟩
 
 /-- Substituting for an index that does not occur free changes nothing. -/
-theorem dsub_of_not_mem_dFV {t : Term} {k : ℕ} (h : k ∉ dFV t) (z : Term) : dsub z k t = t := by
+lemma dsub_of_not_mem_dFV {t : Term} {k : ℕ} (h : k ∉ dFV t) (z : Term) : dsub z k t = t := by
   induction t generalizing z k with
   | var m => simp only [mem_dFV_var] at h; simp only [dsub_var]; split_ifs; rfl
   | app t₁ t₂ ih₁ ih₂ =>
@@ -194,19 +194,19 @@ def dbsize : Term → ℕ
   | app t u => dbsize t + dbsize u + 1
   | abs t => dbsize t + 1
 
-@[simp] theorem dbsize_var (i : ℕ) : dbsize (var i) = 1 := rfl
+@[simp] lemma dbsize_var (i : ℕ) : dbsize (var i) = 1 := rfl
 
-@[simp] theorem dbsize_app (t u : Term) : dbsize (app t u) = dbsize t + dbsize u + 1 := rfl
+@[simp] lemma dbsize_app (t u : Term) : dbsize (app t u) = dbsize t + dbsize u + 1 := rfl
 
-@[simp] theorem dbsize_abs (t : Term) : dbsize (abs t) = dbsize t + 1 := rfl
+@[simp] lemma dbsize_abs (t : Term) : dbsize (abs t) = dbsize t + 1 := rfl
 
-@[simp] theorem dbsize_lift (t : Term) (n : ℕ) : dbsize (lift t n) = dbsize t := by
+@[simp] lemma dbsize_lift (t : Term) (n : ℕ) : dbsize (lift t n) = dbsize t := by
   induction t generalizing n with
   | var i => simp only [lift_var]; split_ifs <;> rfl
   | app t u iht ihu => simp [iht, ihu]
   | abs t ih => simp [ih]
 
-@[simp] theorem dbsize_dsub_var (k j : ℕ) (t : Term) : dbsize (dsub (var k) j t) = dbsize t := by
+@[simp] lemma dbsize_dsub_var (k j : ℕ) (t : Term) : dbsize (dsub (var k) j t) = dbsize t := by
   induction t generalizing k j with
   | var m => simp only [dsub_var]; split_ifs <;> rfl
   | app t u iht ihu => simp [iht, ihu]
@@ -218,7 +218,7 @@ def dLAM (i : ℕ) (t : Term) : Term := abs (dsub (var 0) (i + 1) (lift t 0))
 
 /-- The induction behind Lemma 6 (HOL `onto_lemma`): if `i` is not free in `t`, then `t` is a
 substitution of `dV n` for `i` in a lifted term. -/
-theorem onto_lemma (t : Term) (i n : ℕ) (h : i ∉ dFV t) :
+lemma onto_lemma (t : Term) (i n : ℕ) (h : i ∉ dFV t) :
     ∃ t₀, t = dsub (var n) i (lift t₀ n) := by
   induction t generalizing i n with
   | var m =>
@@ -252,7 +252,7 @@ theorem onto_lemma (t : Term) (i n : ℕ) (h : i ∉ dFV t) :
       exact congrArg abs ht
 
 /-- HOL `onto_lemma2`: the free indices of a term are bounded. -/
-theorem dFV_bounded (t : Term) : ∃ j, ∀ i ∈ dFV t, i < j := by
+lemma dFV_bounded (t : Term) : ∃ j, ∀ i ∈ dFV t, i < j := by
   induction t with
   | var i => exact ⟨i + 1, by intro k hk; simp only [mem_dFV_var] at hk; omega⟩
   | app t u iht ihu =>
@@ -271,19 +271,19 @@ theorem dFV_bounded (t : Term) : ∃ j, ∀ i ∈ dFV t, i < j := by
       omega
 
 /-- HOL `dfresh_exists`: every de Bruijn term has a fresh index. -/
-theorem dfresh_exists (t : Term) : ∃ i, i ∉ dFV t := by
+lemma dfresh_exists (t : Term) : ∃ i, i ∉ dFV t := by
   obtain ⟨j, hj⟩ := dFV_bounded t
   exact ⟨j, fun h => absurd (hj j h) (lt_irrefl j)⟩
 
 /-- **Lemma 6** (HOL `dABS_renamed`): if `i` is not free in `dABS t`, then `dABS t = dLAM i t₀`
 for some `t₀`. -/
-theorem dABS_renamed {t : Term} {i : ℕ} (h : i ∉ dFV (abs t)) : ∃ t₀, abs t = dLAM i t₀ := by
+lemma dABS_renamed {t : Term} {i : ℕ} (h : i ∉ dFV (abs t)) : ∃ t₀, abs t = dLAM i t₀ := by
   have h' : i + 1 ∉ dFV t := by simpa using h
   obtain ⟨t₀, ht⟩ := onto_lemma t (i + 1) 0 h'
   exact ⟨t₀, by rw [dLAM, ← ht]⟩
 
 /-- Case analysis on `dB` with `dLAM` in place of `dABS` (HOL `db_cases'`). -/
-theorem db_cases' (t : Term) :
+lemma db_cases' (t : Term) :
     (∃ i, t = var i) ∨ (∃ t₀ t₁, t = app t₀ t₁) ∨ (∃ i t₀, t = dLAM i t₀) := by
   match t with
   | var i => exact Or.inl ⟨i, rfl⟩
@@ -294,7 +294,7 @@ theorem db_cases' (t : Term) :
     exact Or.inr (Or.inr ⟨i, t₀, h⟩)
 
 /-- The free indices of a `dLAM`-abstraction (HOL `dFVs_dLAM`). -/
-theorem dFV_dLAM (i : ℕ) (t : Term) : dFV (dLAM i t) = (dFV t).erase i := by
+lemma dFV_dLAM (i : ℕ) (t : Term) : dFV (dLAM i t) = (dFV t).erase i := by
   ext j
   simp only [dLAM, mem_dFV_abs, mem_dFV_dsub, mem_dFV_lift, mem_dFV_var, Finset.mem_erase]
   constructor
@@ -307,7 +307,7 @@ theorem dFV_dLAM (i : ℕ) (t : Term) : dFV (dLAM i t) = (dFV t).erase i := by
     exact Or.inl ⟨Or.inr ⟨by omega, by simpa using h2⟩, by omega⟩
 
 /-- Lifting commutes with substitution (the de Bruijn bookkeeping behind `dsub_dLAM`). -/
-theorem lift_dsub (z : Term) (n j : ℕ) (t : Term) :
+lemma lift_dsub (z : Term) (n j : ℕ) (t : Term) :
     lift (dsub z j t) n = dsub (lift z n) (if j < n then j else j + 1) (lift t n) := by
   induction t generalizing z n j with
   | var m => by_cases h : m = j <;> simp [h] <;> split_ifs <;> simp_all <;> omega
@@ -319,7 +319,7 @@ theorem lift_dsub (z : Term) (n j : ℕ) (t : Term) :
 
 /-- The substitution lemma for `dsub`: two substitutions for distinct indices commute, provided
 neither substituted term contains the other's index free. -/
-theorem dsub_dsub_comm {a b : Term} {k l : ℕ} (hkl : k ≠ l) (hb : k ∉ dFV b) (ha : l ∉ dFV a)
+lemma dsub_dsub_comm {a b : Term} {k l : ℕ} (hkl : k ≠ l) (hb : k ∉ dFV b) (ha : l ∉ dFV a)
     (u : Term) : dsub a k (dsub b l u) = dsub b l (dsub a k u) := by
   induction u generalizing a b k l with
   | var m =>
@@ -344,11 +344,11 @@ theorem dsub_dsub_comm {a b : Term} {k l : ℕ} (hkl : k ≠ l) (hb : k ∉ dFV 
         · exact ha (by simpa using h)
       simp only [dsub_abs, ih (by omega : k + 1 ≠ l + 1) hb' ha']
 
-@[simp] theorem dbsize_dLAM (i : ℕ) (t : Term) : dbsize (dLAM i t) = dbsize t + 1 := by
+@[simp] lemma dbsize_dLAM (i : ℕ) (t : Term) : dbsize (dLAM i t) = dbsize t + 1 := by
   simp [dLAM]
 
 /-- HOL `sub_dLAM`: substitution interacts with `dLAM` as it does with `LAM` in `Λα`. -/
-theorem dsub_dLAM {z : Term} {i j : ℕ} {t : Term} (hij : i ≠ j) (hi : i ∉ dFV z) :
+lemma dsub_dLAM {z : Term} {i j : ℕ} {t : Term} (hij : i ≠ j) (hi : i ∉ dFV z) :
     dsub z j (dLAM i t) = dLAM i (dsub z j t) := by
   have h0 : (j + 1 : ℕ) ∉ dFV (var (0 : ℕ)) := by simp
   have hz : i + 1 ∉ dFV (lift z 0) := by

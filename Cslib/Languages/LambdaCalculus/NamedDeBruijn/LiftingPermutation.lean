@@ -51,7 +51,7 @@ namespace Term
 
 /-- **Lemma 13** (HOL `sub_nsub`): for `n ≤ i`,
 `sub u i t = nsub u n (sub (dV n) (i+1) (lift t n))`. -/
-theorem dsub_eq_nsub (u : Term) (i n : ℕ) (t : Term) (h : n ≤ i) :
+lemma dsub_eq_nsub (u : Term) (i n : ℕ) (t : Term) (h : n ≤ i) :
     dsub u i t = nsub u n (dsub (var n) (i + 1) (lift t n)) := by
   induction t generalizing u i n with
   | var m =>
@@ -66,13 +66,13 @@ theorem dsub_eq_nsub (u : Term) (i n : ℕ) (t : Term) (h : n ≤ i) :
 
 /-- Nipkow's relation `→d` does reduce `→d'`-redexes in the correct way (HOL `alt_dbeta_rule`):
 `dAPP (dLAM i t) u →d sub u i t`.  Lemma 13 with `n = 0`. -/
-theorem beta_dLAM_redex (i : ℕ) (t u : Term) : Beta (app (dLAM i t) u) (dsub u i t) := by
+lemma beta_dLAM_redex (i : ℕ) (t u : Term) : Beta (app (dLAM i t) u) (dsub u i t) := by
   rw [dsub_eq_nsub u i 0 t (Nat.zero_le i)]
   exact Beta.red _ _
 
 /-- Conversely, the de Bruijn redexes reduce under `→d'` (HOL `alt_dbeta'_rule`):
 `dAPP (dABS t) u →d' nsub u 0 t`. -/
-theorem dbeta'_dABS_redex (t u : Term) : DBeta' (app (abs t) u) (nsub u 0 t) := by
+lemma dbeta'_dABS_redex (t u : Term) : DBeta' (app (abs t) u) (nsub u 0 t) := by
   obtain ⟨i, hi⟩ := dfresh_exists (abs t)
   obtain ⟨t₀, ht⟩ := dABS_renamed hi
   have ht' : t = dsub (var 0) (i + 1) (lift t₀ 0) := Term.abs.inj ht
@@ -95,13 +95,13 @@ def liftingPermInvFun (lim n : ℕ) (a : Atom) : Atom :=
   else if a.val ≤ n + 1 then ⟨a.val - 1⟩
   else a
 
-theorem liftingPermFun_inv (lim n : ℕ) (a : Atom) :
+lemma liftingPermFun_inv (lim n : ℕ) (a : Atom) :
     liftingPermFun lim n (liftingPermInvFun lim n a) = a := by
   obtain ⟨v⟩ := a
   simp only [liftingPermFun, liftingPermInvFun]
   split_ifs <;> simp_all <;> omega
 
-theorem liftingPermInvFun_inv (lim n : ℕ) (a : Atom) :
+lemma liftingPermInvFun_inv (lim n : ℕ) (a : Atom) :
     liftingPermInvFun lim n (liftingPermFun lim n a) = a := by
   obtain ⟨v⟩ := a
   simp only [liftingPermFun, liftingPermInvFun]
@@ -120,7 +120,7 @@ def liftingPerm (lim n : ℕ) : FinPerm :=
       split_ifs <;> first | rfl | (exfalso; omega)⟩
 
 /-- HOL `lifting_pm_behaves`: the characterisation of the lifting permutation. -/
-theorem liftingPerm_apply (lim n i : ℕ) :
+lemma liftingPerm_apply (lim n i : ℕ) :
     liftingPerm lim n (Atom.ofNat i) =
       if i < lim then Atom.ofNat i
       else if i ≤ n then Atom.ofNat (i + 1)
@@ -129,7 +129,7 @@ theorem liftingPerm_apply (lim n i : ℕ) :
 
 /-- The `dABS` case of Lemma 14 (HOL `inc_pm0_lifting_pm`):
 `inc 0 (lifting_pm (m, n)) = lifting_pm (m+1, n+1)`. -/
-theorem incPerm_zero_liftingPerm (m n : ℕ) :
+lemma incPerm_zero_liftingPerm (m n : ℕ) :
     incPerm 0 (liftingPerm m n) = liftingPerm (m + 1) (n + 1) := by
   refine FinPerm.ext (fun a => ?_)
   simp only [incPerm_apply, incFun, gincAtom, gdecAtom, Nat.not_lt_zero, ite_false,
@@ -141,7 +141,7 @@ theorem incPerm_zero_liftingPerm (m n : ℕ) :
 
 /-- **Lemma 14** (Lifting is a permutation, HOL `lifts_are_specific_dpms`): if `n` is at least
 as large as the largest free index in `t`, then `lift t m = (lifting_pm (m, n)) · t`. -/
-theorem lift_eq_dpm (t : Term) (n : ℕ) (h : ∀ i ∈ dFV t, i ≤ n) (m : ℕ) :
+lemma lift_eq_dpm (t : Term) (n : ℕ) (h : ∀ i ∈ dFV t, i ≤ n) (m : ℕ) :
     lift t m = (liftingPerm m n) • t := by
   induction t generalizing m n with
   | var i =>
@@ -164,12 +164,12 @@ theorem lift_eq_dpm (t : Term) (n : ℕ) (h : ∀ i ∈ dFV t, i ≤ n) (m : ℕ
         omega
 
 /-- **Lemma 14**, existential form (HOL `lifts_are_dpms`): every lifting is a permutation. -/
-theorem lift_is_dpm (t : Term) (m : ℕ) : ∃ π : FinPerm, lift t m = π • t := by
+lemma lift_is_dpm (t : Term) (m : ℕ) : ∃ π : FinPerm, lift t m = π • t := by
   obtain ⟨n, hn⟩ := dFV_bounded t
   exact ⟨liftingPerm m n, lift_eq_dpm t n (fun i hi => (hn i hi).le) m⟩
 
 /-- Incrementing a transposition of indices shifts both indices. -/
-theorem incPerm_zero_swap (i j : ℕ) :
+lemma incPerm_zero_swap (i j : ℕ) :
     incPerm 0 (FinPerm.swap (Atom.ofNat i) (Atom.ofNat j)) =
       FinPerm.swap (Atom.ofNat (i + 1)) (Atom.ofNat (j + 1)) := by
   refine FinPerm.ext (fun a => ?_)
@@ -197,7 +197,7 @@ theorem incPerm_zero_swap (i j : ℕ) :
 
 /-- Substituting `dV i` for `j` in a term in which `i` is not free is the transposition
 `[i ↔ j]` (HOL `fresh_dpm_sub`, `dLAM_alt_dpm`). -/
-theorem dsub_var_eq_dpm {t : Term} {i j : ℕ} (h : i ∉ dFV t) :
+lemma dsub_var_eq_dpm {t : Term} {i j : ℕ} (h : i ∉ dFV t) :
     dsub (var i) j t = (FinPerm.swap (Atom.ofNat i) (Atom.ofNat j)) • t := by
   induction t generalizing i j with
   | var m =>
@@ -221,7 +221,7 @@ theorem dsub_var_eq_dpm {t : Term} {i j : ℕ} (h : i ∉ dFV t) :
 
 /-- Lemma 14 and `dsub_var_eq_dpm` together: `dLAM i t` is `dABS` of a permutation of `t` that
 depends only on `i` and on a bound `n` for the free indices of `t`. -/
-theorem dLAM_eq_abs_dpm (i n : ℕ) (t : Term) (h : ∀ k ∈ dFV t, k ≤ n) :
+lemma dLAM_eq_abs_dpm (i n : ℕ) (t : Term) (h : ∀ k ∈ dFV t, k ≤ n) :
     dLAM i t =
       abs ((FinPerm.swap (Atom.ofNat 0) (Atom.ofNat (i + 1)) * liftingPerm 0 n) • t) := by
   have h0 : (0 : ℕ) ∉ dFV (lift t 0) := by
@@ -230,7 +230,7 @@ theorem dLAM_eq_abs_dpm (i n : ℕ) (t : Term) (h : ∀ k ∈ dFV t, k ≤ n) :
   rw [dLAM, dsub_var_eq_dpm h0, lift_eq_dpm t n h 0, mul_smul]
 
 /-- Lifting is injective (HOL `lift_11`). -/
-theorem lift_inj {t u : Term} {n : ℕ} (h : lift t n = lift u n) : t = u := by
+lemma lift_inj {t u : Term} {n : ℕ} (h : lift t n = lift u n) : t = u := by
   induction t generalizing u n with
   | var m =>
       cases u with
@@ -251,12 +251,12 @@ theorem lift_inj {t u : Term} {n : ℕ} (h : lift t n = lift u n) : t = u := by
       | abs u => simp only [lift_abs, Term.abs.injEq] at h; exact congrArg _ (ih h)
 
 /-- Index `0` is never free in a term lifted at `0`. -/
-theorem zero_not_mem_dFV_lift (t : Term) : (0 : ℕ) ∉ dFV (lift t 0) := by
+lemma zero_not_mem_dFV_lift (t : Term) : (0 : ℕ) ∉ dFV (lift t 0) := by
   simp only [mem_dFV_lift]
   rintro (⟨h, _⟩ | ⟨h, _⟩) <;> omega
 
 /-- The free indices of `lift t 0`, above `0`. -/
-theorem mem_dFV_lift_succ (u : Term) (i : ℕ) : i + 1 ∈ dFV (lift u 0) ↔ i ∈ dFV u := by
+lemma mem_dFV_lift_succ (u : Term) (i : ℕ) : i + 1 ∈ dFV (lift u 0) ↔ i ∈ dFV u := by
   simp only [mem_dFV_lift, Nat.add_sub_cancel]
   constructor
   · rintro (⟨h, _⟩ | ⟨_, h⟩)
@@ -265,23 +265,23 @@ theorem mem_dFV_lift_succ (u : Term) (i : ℕ) : i + 1 ∈ dFV (lift u 0) ↔ i 
   · intro h; exact Or.inr ⟨by omega, h⟩
 
 /-- Distinct indices give distinct atoms. -/
-theorem ofNat_ne_ofNat {k l : ℕ} (h : k ≠ l) : Atom.ofNat k ≠ Atom.ofNat l :=
+lemma ofNat_ne_ofNat {k l : ℕ} (h : k ≠ l) : Atom.ofNat k ≠ Atom.ofNat l :=
   fun hc => h (congrArg Atom.val hc)
 
 /-- The permutation form of `dLAM`, obtained from `dsub_var_eq_dpm`: the substitution inside
 `dLAM` is the transposition `[0 ↔ i+1]`. -/
-theorem dLAM_eq_abs_swap (i : ℕ) (t : Term) :
+lemma dLAM_eq_abs_swap (i : ℕ) (t : Term) :
     dLAM i t = abs ((FinPerm.swap (Atom.ofNat 0) (Atom.ofNat (i + 1))) • lift t 0) := by
   rw [dLAM, dsub_var_eq_dpm (zero_not_mem_dFV_lift t)]
 
 /-- The permutation action on de Bruijn terms is injective. -/
-theorem dpm_left_cancel {π : FinPerm} {t u : Term} (h : π • t = π • u) : t = u := by
+lemma dpm_left_cancel {π : FinPerm} {t u : Term} (h : π • t = π • u) : t = u := by
   have h' := congrArg (fun x : Term => π⁻¹ • x) h
   simpa only [inv_smul_smul] using h'
 
 /-- The main step of `dLAM_eq_dLAM_iff`: two transposed lifts agree only if the two bodies are
 related by the transposition `[i ↔ j]` and `i` is fresh for the second one. -/
-theorem swap_lift_eq_aux {i j : ℕ} {t u : Term} (hij : i ≠ j)
+lemma swap_lift_eq_aux {i j : ℕ} {t u : Term} (hij : i ≠ j)
     (h : (FinPerm.swap (Atom.ofNat 0) (Atom.ofNat (i + 1))) • lift t 0
         = (FinPerm.swap (Atom.ofNat 0) (Atom.ofNat (j + 1))) • lift u 0) :
     i ∉ dFV u ∧ t = (FinPerm.swap (Atom.ofNat i) (Atom.ofNat j)) • u := by
@@ -329,7 +329,7 @@ theorem swap_lift_eq_aux {i j : ℕ} {t u : Term} (hij : i ≠ j)
 
 /-- `dLAM` is injective up to a transposition of the two abstracted indices, like `LAM` on
 `Λα`. -/
-theorem dLAM_eq_dLAM_iff {i j : ℕ} {t u : Term} :
+lemma dLAM_eq_dLAM_iff {i j : ℕ} {t u : Term} :
     dLAM i t = dLAM j u ↔
       (i = j ∧ t = u) ∨
         (i ≠ j ∧ i ∉ dFV u ∧ t = (FinPerm.swap (Atom.ofNat i) (Atom.ofNat j)) • u) := by

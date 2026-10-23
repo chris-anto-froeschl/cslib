@@ -66,7 +66,7 @@ section Transport
 variable {α β : Type*} {r : α → α → Prop} {s : β → β → Prop}
 
 /-- A bijection intertwining two relations intertwines their reflexive-transitive closures. -/
-theorem Relation.reflTransGen_equiv_iff (e : α ≃ β) (h : ∀ a b, r a b ↔ s (e a) (e b))
+lemma Relation.reflTransGen_equiv_iff (e : α ≃ β) (h : ∀ a b, r a b ↔ s (e a) (e b))
     (a b : α) : ReflTransGen r a b ↔ ReflTransGen s (e a) (e b) := by
   constructor
   · intro hab
@@ -89,7 +89,7 @@ theorem Relation.reflTransGen_equiv_iff (e : α ≃ β) (h : ∀ a b, r a b ↔ 
     simpa using key (e a) (e b) hab a rfl
 
 /-- Confluence transports along an isomorphism of reduction systems (paper, equation (3)). -/
-theorem Equiv.confluent_of_equiv (e : α ≃ β) (h : ∀ a b, r a b ↔ s (e a) (e b))
+lemma Equiv.confluent_of_equiv (e : α ≃ β) (h : ∀ a b, r a b ↔ s (e a) (e b))
     (hs : Confluent s) : Confluent r := by
   intro x y z hxy hxz
   obtain ⟨w, hyw, hzw⟩ :=
@@ -102,7 +102,7 @@ theorem Equiv.confluent_of_equiv (e : α ≃ β) (h : ∀ a b, r a b ↔ s (e a)
       (by rwa [e.apply_symm_apply])
 
 /-- Normal forms correspond along an isomorphism of reduction systems. -/
-theorem Equiv.normal_iff_of_equiv (e : α ≃ β) (h : ∀ a b, r a b ↔ s (e a) (e b)) (a : α) :
+lemma Equiv.normal_iff_of_equiv (e : α ≃ β) (h : ∀ a b, r a b ↔ s (e a) (e b)) (a : α) :
     Normal r a ↔ Normal s (e a) := by
   constructor
   · rintro hn ⟨b, hb⟩
@@ -118,7 +118,7 @@ open Cslib.LambdaCalculus.Named.Untyped (TermAlpha BetaAlpha EtaAlpha)
 open scoped Cslib.LambdaCalculus.Named.Untyped.TermAlpha
 
 /-- `f` is the only map `Λα → dB` satisfying the equations (5). -/
-theorem toDB_unique (g : TermAlpha Atom → Term)
+lemma toDB_unique (g : TermAlpha Atom → Term)
     (hvar : ∀ x : Atom, g (TermAlpha.var x) = Term.var x.val)
     (happ : ∀ M N, g (TermAlpha.app M N) = Term.app (g M) (g N))
     (habs : ∀ (x : Atom) (M), g (TermAlpha.abs x M) = Term.dLAM x.val (g M)) :
@@ -138,34 +138,34 @@ theorem toDB_unique (g : TermAlpha Atom → Term)
         rw [h, habs, ih, toDB_abs]
 
 /-- The multi-step form of Theorem 20: `M ↠β N` in `λNα` iff `f M ↠d f N` in `dB`. -/
-theorem reflTransGen_betaAlpha_iff {M N : TermAlpha Atom} :
+lemma reflTransGen_betaAlpha_iff {M N : TermAlpha Atom} :
     ReflTransGen BetaAlpha M N ↔ ReflTransGen Beta (toDB M) (toDB N) :=
   Relation.reflTransGen_equiv_iff dbEquiv (fun _ _ => betaAlpha_iff_beta) M N
 
 /-- The Church–Rosser theorem for `λNα`, transported from `churchRosser_beta` on de Bruijn terms
 along `f` (Theorem 20). -/
-theorem churchRosser_betaAlpha : Confluent (BetaAlpha (Var := Atom)) :=
+lemma churchRosser_betaAlpha : Confluent (BetaAlpha (Var := Atom)) :=
   Equiv.confluent_of_equiv dbEquiv (fun _ _ => betaAlpha_iff_beta) churchRosser_beta
 
 /-- β-normal forms correspond along `f`. -/
-theorem normal_betaAlpha_iff {M : TermAlpha Atom} :
+lemma normal_betaAlpha_iff {M : TermAlpha Atom} :
     Normal BetaAlpha M ↔ Normal Beta (toDB M) :=
   Equiv.normal_iff_of_equiv dbEquiv (fun _ _ => betaAlpha_iff_beta) M
 
 /-- The multi-step form of the η-part of Section 4.4. -/
-theorem reflTransGen_etaAlpha_iff {M N : TermAlpha Atom} :
+lemma reflTransGen_etaAlpha_iff {M N : TermAlpha Atom} :
     ReflTransGen EtaAlpha M N ↔ ReflTransGen NEta (toDB M) (toDB N) :=
   Relation.reflTransGen_equiv_iff dbEquiv (fun _ _ => etaAlpha_iff_neta) M N
 
 /-- η-normal forms correspond along `f`. -/
-theorem normal_etaAlpha_iff {M : TermAlpha Atom} :
+lemma normal_etaAlpha_iff {M : TermAlpha Atom} :
     Normal EtaAlpha M ↔ Normal NEta (toDB M) :=
   Equiv.normal_iff_of_equiv dbEquiv (fun _ _ => etaAlpha_iff_neta) M
 
 /-- α-structural (BVC) induction for `Λα`: to prove a property of every `M`, it suffices to
 treat abstractions whose bound name avoids a fixed finite set `C`.  Derived from the de Bruijn
 side, by complete induction on `dbsize (f M)`. -/
-theorem TermAlpha.bvc_induction {motive : TermAlpha Atom → Prop} (C : Finset Atom)
+lemma TermAlpha.bvc_induction {motive : TermAlpha Atom → Prop} (C : Finset Atom)
     (var : ∀ x : Atom, motive (TermAlpha.var x))
     (app : ∀ M N, motive M → motive N → motive (TermAlpha.app M N))
     (abs : ∀ (x : Atom) (M), x ∉ C → motive M → motive (TermAlpha.abs x M)) :
@@ -217,7 +217,7 @@ proof_wanted churchRosser_betaEtaAlpha :
     Confluent (fun M N : TermAlpha Atom => BetaAlpha M N ∨ EtaAlpha M N)
 
 /-- β-normal forms in `λNα` are unique. -/
-theorem TermAlpha.normal_form_unique {M N₁ N₂ : TermAlpha Atom}
+lemma TermAlpha.normal_form_unique {M N₁ N₂ : TermAlpha Atom}
     (h₁ : ReflTransGen BetaAlpha M N₁) (h₂ : ReflTransGen BetaAlpha M N₂)
     (hn₁ : Normal BetaAlpha N₁) (hn₂ : Normal BetaAlpha N₂) : N₁ = N₂ := by
   obtain ⟨w, hw₁, hw₂⟩ := churchRosser_betaAlpha h₁ h₂

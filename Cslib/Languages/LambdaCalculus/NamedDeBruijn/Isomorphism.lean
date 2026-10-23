@@ -48,7 +48,7 @@ open Cslib.Logic.Nominal
 namespace Term
 
 /-- **Lemma 16**: `→d ⊆ →d'`.  The `abs` case is Theorem 15. -/
-theorem dbeta'_of_beta {t u : Term} (h : Beta t u) : DBeta' t u := by
+lemma dbeta'_of_beta {t u : Term} (h : Beta t u) : DBeta' t u := by
   induction h with
   | red t' s => exact dbeta'_dABS_redex t' s
   | appL _ ih => exact DBeta'.appL _ ih
@@ -58,7 +58,7 @@ theorem dbeta'_of_beta {t u : Term} (h : Beta t u) : DBeta' t u := by
         (fun π _ _ => DBeta'.equivariant π)).mpr (fun i _ _ h => DBeta'.lam i h) _ _ ih
 
 /-- **Lemma 17** (HOL `dpm_nsub`): `π · (nsub t i u) = nsub (π · t) i (inc i (π) · u)`. -/
-theorem dpm_nsub (π : FinPerm) (t : Term) (i : ℕ) (u : Term) :
+lemma dpm_nsub (π : FinPerm) (t : Term) (i : ℕ) (u : Term) :
     π • (nsub t i u) = nsub (π • t) i ((incPerm i π) • u) := by
   induction u generalizing π t i with
   | var m =>
@@ -96,7 +96,7 @@ theorem dpm_nsub (π : FinPerm) (t : Term) (i : ℕ) (u : Term) :
   | abs u ih => simp only [nsub_abs, dpm_abs, ih, incPerm_zero_incPerm, lift_dpm]
 
 /-- `→d` is equivariant, by rule induction using Lemma 17 (HOL `dbeta_dpm`). -/
-theorem Beta.dpm {t u : Term} (h : Beta t u) (π : FinPerm) : Beta (π • t) (π • u) := by
+lemma Beta.dpm {t u : Term} (h : Beta t u) (π : FinPerm) : Beta (π • t) (π • u) := by
   induction h generalizing π with
   | red t' s =>
       simp only [dpm_app, dpm_abs]
@@ -107,13 +107,13 @@ theorem Beta.dpm {t u : Term} (h : Beta t u) (π : FinPerm) : Beta (π • t) (�
   | abs _ ih => simp only [dpm_abs]; exact Beta.abs (ih _)
 
 /-- Equivariance of `→d` in if-and-only-if form, as required by Theorem 15. -/
-theorem Beta.equivariant (π : FinPerm) (t u : Term) : Beta (π • t) (π • u) ↔ Beta t u := by
+lemma Beta.equivariant (π : FinPerm) (t u : Term) : Beta (π • t) (π • u) ↔ Beta t u := by
   refine ⟨fun h => ?_, fun h => Beta.dpm h π⟩
   have h2 := Beta.dpm h π⁻¹
   rwa [inv_smul_smul, inv_smul_smul] at h2
 
 /-- **Lemma 18**: `→d' ⊆ →d`.  The `dLAM` case is Theorem 15 applied to `→d`. -/
-theorem beta_of_dbeta' {t u : Term} (h : DBeta' t u) : Beta t u := by
+lemma beta_of_dbeta' {t u : Term} (h : DBeta' t u) : Beta t u := by
   induction h with
   | red i t u => exact beta_dLAM_redex i t u
   | appL _ _ ih => exact Beta.appL ih

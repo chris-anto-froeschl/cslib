@@ -64,13 +64,13 @@ variable {Var : Type u} [DecidableEq Var] [HasFresh Var]
 
 omit [HasFresh Var] in
 /-- A free variable is a variable. -/
-theorem mem_vars_of_mem_fv {n : Term Var} {a : Var} (h : a ∈ n.fv) : a ∈ n.vars := by
+lemma mem_vars_of_mem_fv {n : Term Var} {a : Var} (h : a ∈ n.fv) : a ∈ n.vars := by
   rw [vars_eq_fv_union_bv]; exact Finset.mem_union_left _ h
 
 /-- Abstracting a term over `y` is α-equivalent to abstracting the swapped term over a variable
 `x` that is not free in it.  This is the named analogue of the second disjunct of
 `Term.dLAM_eq_dLAM_iff`. -/
-theorem abs_swap_alphaEquiv {n : Term Var} {x y : Var} (hx : x ∉ n.fv) :
+lemma abs_swap_alphaEquiv {n : Term Var} {x y : Var} (hx : x ∉ n.fv) :
     (Term.abs y n) =α (Term.abs x (n.swap x y)) := by
   obtain ⟨z, hz⟩ := HasFresh.fresh_exists (n.vars ∪ (n.swap x y).vars ∪ {x, y})
   simp only [Finset.mem_union, Finset.mem_insert, Finset.mem_singleton, not_or] at hz
@@ -115,16 +115,16 @@ def fromTerm : Lam → Term
   | .app m n => .app (fromTerm m) (fromTerm n)
   | .abs x m => Term.dLAM x.val (fromTerm m)
 
-@[simp] theorem fromTerm_var (x : Atom) : fromTerm (.var x) = .var x.val := rfl
+@[simp] lemma fromTerm_var (x : Atom) : fromTerm (.var x) = .var x.val := rfl
 
-@[simp] theorem fromTerm_app (m n : Lam) :
+@[simp] lemma fromTerm_app (m n : Lam) :
     fromTerm (.app m n) = .app (fromTerm m) (fromTerm n) := rfl
 
-@[simp] theorem fromTerm_abs (x : Atom) (m : Lam) :
+@[simp] lemma fromTerm_abs (x : Atom) (m : Lam) :
     fromTerm (.abs x m) = Term.dLAM x.val (fromTerm m) := rfl
 
 /-- `f` is equivariant: `f (π · M) = π · f M`. -/
-theorem fromTerm_permute (π : FinPerm) (m : Lam) :
+lemma fromTerm_permute (π : FinPerm) (m : Lam) :
     fromTerm (m.permute π.val) = π • fromTerm m := by
   induction m with
   | var x => rfl
@@ -138,14 +138,14 @@ theorem fromTerm_permute (π : FinPerm) (m : Lam) :
       rfl
 
 /-- The special case of `fromTerm_permute` for transpositions. -/
-theorem fromTerm_swap (a b : Atom) (m : Lam) :
+lemma fromTerm_swap (a b : Atom) (m : Lam) :
     fromTerm (m.swap a b) = (FinPerm.swap a b) • fromTerm m := by
   rw [← Cslib.LambdaCalculus.Named.Untyped.Term.permute_swap, ← fromTerm_permute]
   rfl
 
 /-- The free indices of `f M` are the codes of the free variables of `M` (membership form of
 HOL `dFVs_fromTerm`). -/
-theorem mem_dFV_fromTerm (m : Lam) (k : ℕ) :
+lemma mem_dFV_fromTerm (m : Lam) (k : ℕ) :
     k ∈ Term.dFV (fromTerm m) ↔ Atom.ofNat k ∈ m.fv := by
   induction m with
   | var x =>
@@ -164,14 +164,14 @@ theorem mem_dFV_fromTerm (m : Lam) (k : ℕ) :
         fun ⟨hm, hx⟩ => ⟨fun hc => hx (Atom.ext hc), hm⟩⟩
 
 /-- HOL `dFVs_fromTerm`: `f` maps free variables to free indices. -/
-theorem dFV_fromTerm (m : Lam) : Term.dFV (fromTerm m) = m.fv.image Atom.val := by
+lemma dFV_fromTerm (m : Lam) : Term.dFV (fromTerm m) = m.fv.image Atom.val := by
   ext k
   simp only [mem_dFV_fromTerm, Finset.mem_image]
   exact ⟨fun h => ⟨Atom.ofNat k, h, rfl⟩, fun ⟨a, ha, hk⟩ => by rw [← hk]; rwa [Atom.val_ofNat]⟩
 
 /-- Renaming the abstracted variable by a transposition: if `x` is not free in `M`, then
 `dLAM x̂ (f ((x y) · M)) = dLAM ŷ (f M)`, the image under `f` of `LAM x ((x y) · M) = LAM y M`. -/
-theorem dLAM_swap_eq (m : Lam) (x y : Atom) (hx : x ∉ m.fv) :
+lemma dLAM_swap_eq (m : Lam) (x y : Atom) (hx : x ∉ m.fv) :
     Term.dLAM x.val (fromTerm (m.swap x y)) = Term.dLAM y.val (fromTerm m) := by
   have hsupp : (FinPerm.swap x y) • Term.dLAM y.val (fromTerm m)
       = Term.dLAM y.val (fromTerm m) := by
@@ -192,7 +192,7 @@ theorem dLAM_swap_eq (m : Lam) (x y : Atom) (hx : x ∉ m.fv) :
 
 /-- The `rename` version of `dLAM_swap_eq`, matching the shape of the `abs` rule of
 `AlphaEquiv`. -/
-theorem dLAM_rename_eq (m : Lam) (y z : Atom) (hz : z ∉ m.vars) :
+lemma dLAM_rename_eq (m : Lam) (y z : Atom) (hz : z ∉ m.vars) :
     Term.dLAM z.val (fromTerm (m.rename y z)) = Term.dLAM y.val (fromTerm m) := by
   rw [← Cslib.LambdaCalculus.Named.Untyped.Term.swap_eq_rename_of_notMem_vars hz,
     Cslib.LambdaCalculus.Named.Untyped.Term.swap_comm]
@@ -200,7 +200,7 @@ theorem dLAM_rename_eq (m : Lam) (y z : Atom) (hz : z ∉ m.vars) :
     (fun hc => hz (Cslib.LambdaCalculus.Named.Untyped.Term.mem_vars_of_mem_fv hc))
 
 /-- The map `f` respects α-equivalence, hence factors through `Λα`. -/
-theorem fromTerm_respects_alpha {m n : Lam} (h : m =α n) : fromTerm m = fromTerm n := by
+lemma fromTerm_respects_alpha {m n : Lam} (h : m =α n) : fromTerm m = fromTerm n := by
   induction h with
   | var => rfl
   | app _ _ ih1 ih2 =>
@@ -213,7 +213,7 @@ theorem fromTerm_respects_alpha {m n : Lam} (h : m =α n) : fromTerm m = fromTer
 
 /-- Injectivity of `f` (HOL `fromTerm_11`), by structural induction.  The `abs` case is exactly
 the de Bruijn lemma `Term.dLAM_eq_dLAM_iff` transported along `abs_swap_alphaEquiv`. -/
-theorem fromTerm_injective {m n : Lam} (h : fromTerm m = fromTerm n) : m =α n := by
+lemma fromTerm_injective {m n : Lam} (h : fromTerm m = fromTerm n) : m =α n := by
   induction m generalizing n with
   | var x =>
       cases n with
@@ -248,12 +248,12 @@ theorem fromTerm_injective {m n : Lam} (h : fromTerm m = fromTerm n) : m =α n :
               (Named.Untyped.Term.abs_swap_alphaEquiv hxn).symm
 
 /-- `f M = f N ↔ M =α N` (HOL `fromTerm_11`). -/
-theorem fromTerm_alphaEquiv_iff {m n : Lam} : fromTerm m = fromTerm n ↔ m =α n :=
+lemma fromTerm_alphaEquiv_iff {m n : Lam} : fromTerm m = fromTerm n ↔ m =α n :=
   ⟨fromTerm_injective, fromTerm_respects_alpha⟩
 
 /-- HOL `fromTerm_subst`: `f (M[v := N]) = sub (f N) v̂ (f M)`.  In the paper this is proved by
 "BVC-compatible" structural induction on `M`. -/
-theorem fromTerm_dsub (m n : Lam) (x : Atom) :
+lemma fromTerm_dsub (m n : Lam) (x : Atom) :
     fromTerm (m[x := n]) = Term.dsub (fromTerm n) x.val (fromTerm m) := by
   induction m using Cslib.LambdaCalculus.Named.Untyped.Term.induction_by_sizeOf with
   | step m ih =>
@@ -290,7 +290,7 @@ theorem fromTerm_dsub (m n : Lam) (x : Atom) :
 
 /-- Surjectivity of `f` (HOL `fromTerm_onto`), by complete induction on `Term.dbsize`.  The
 `abs` case uses Lemma 6 (`Term.dABS_renamed`). -/
-theorem fromTerm_surjective (t : Term) : ∃ m : Lam, fromTerm m = t := by
+lemma fromTerm_surjective (t : Term) : ∃ m : Lam, fromTerm m = t := by
   suffices h : ∀ k : ℕ, ∀ t : Term, Term.dbsize t ≤ k → ∃ m : Lam, fromTerm m = t by
     exact h (Term.dbsize t) t le_rfl
   intro k
@@ -321,13 +321,13 @@ theorem fromTerm_surjective (t : Term) : ∃ m : Lam, fromTerm m = t := by
             rw [hm₀, Atom.val_ofNat, ← ht₀]⟩
 
 /-- Applying a transposition twice is the identity. -/
-theorem swap_apply_swap_apply (a b c : Atom) :
+lemma swap_apply_swap_apply (a b c : Atom) :
     (FinPerm.swap a b) ((FinPerm.swap a b) c) = c := by
   rw [← FinPerm.mul_apply, FinPerm.swap_swap]
   rfl
 
 /-- If `f M` is an application, so is `M`. -/
-theorem fromTerm_eq_app {m : Lam} {d₁ d₂ : Term} (h : fromTerm m = Term.app d₁ d₂) :
+lemma fromTerm_eq_app {m : Lam} {d₁ d₂ : Term} (h : fromTerm m = Term.app d₁ d₂) :
     ∃ m₁ m₂ : Lam, m = .app m₁ m₂ ∧ fromTerm m₁ = d₁ ∧ fromTerm m₂ = d₂ := by
   match m with
   | .var x => simp [fromTerm] at h
@@ -340,7 +340,7 @@ theorem fromTerm_eq_app {m : Lam} {d₁ d₂ : Term} (h : fromTerm m = Term.app 
 /-- If `f M` is a `dLAM`-abstraction over `i`, then `M` is α-equivalent to an abstraction
 over `î`.  The "swapped" branch of `Term.dLAM_eq_dLAM_iff` is matched by
 `abs_swap_alphaEquiv` on the named side. -/
-theorem fromTerm_eq_dLAM {m : Lam} {i : ℕ} {d : Term} (h : fromTerm m = Term.dLAM i d) :
+lemma fromTerm_eq_dLAM {m : Lam} {i : ℕ} {d : Term} (h : fromTerm m = Term.dLAM i d) :
     ∃ m₀ : Lam, m =α (.abs (Atom.ofNat i) m₀) ∧ fromTerm m₀ = d := by
   match m with
   | .var x => simp [fromTerm, Term.dLAM] at h
@@ -370,17 +370,17 @@ theorem fromTerm_eq_dLAM {m : Lam} {i : ℕ} {d : Term} (h : fromTerm m = Term.d
 def toDB : TermAlpha Atom → Term :=
   Quotient.lift fromTerm (fun _ _ h => fromTerm_respects_alpha h)
 
-@[simp] theorem toDB_mk (m : Lam) : toDB ⟦m⟧α = fromTerm m := rfl
+@[simp] lemma toDB_mk (m : Lam) : toDB ⟦m⟧α = fromTerm m := rfl
 
-@[simp] theorem toDB_var (x : Atom) : toDB (TermAlpha.var x) = .var x.val := rfl
+@[simp] lemma toDB_var (x : Atom) : toDB (TermAlpha.var x) = .var x.val := rfl
 
-@[simp] theorem toDB_app (M N : TermAlpha Atom) :
+@[simp] lemma toDB_app (M N : TermAlpha Atom) :
     toDB (TermAlpha.app M N) = .app (toDB M) (toDB N) := by
   induction M using TermAlpha.ind
   induction N using TermAlpha.ind
   rfl
 
-@[simp] theorem toDB_abs (x : Atom) (M : TermAlpha Atom) :
+@[simp] lemma toDB_abs (x : Atom) (M : TermAlpha Atom) :
     toDB (TermAlpha.abs x M) = Term.dLAM x.val (toDB M) := by
   induction M using TermAlpha.ind
   rfl
@@ -399,14 +399,14 @@ noncomputable def dbEquiv : TermAlpha Atom ≃ Term where
   right_inv := fun t => (fromTerm_surjective t).choose_spec
 
 /-- `f` is injective on `Λα` (the injectivity half of Theorem 11). -/
-theorem toDB_injective {M N : TermAlpha Atom} (h : toDB M = toDB N) : M = N := by
+lemma toDB_injective {M N : TermAlpha Atom} (h : toDB M = toDB N) : M = N := by
   induction M using TermAlpha.ind with
   | _ m =>
     induction N using TermAlpha.ind with
     | _ n => exact TermAlpha.mk_eq_mk.mpr (fromTerm_alphaEquiv_iff.mp h)
 
 /-- The quotient-level form of `fromTerm_dsub`. -/
-@[simp] theorem toDB_subst (M N : TermAlpha Atom) (x : Atom) :
+@[simp] lemma toDB_subst (M N : TermAlpha Atom) (x : Atom) :
     toDB (TermAlpha.subst M x N) = Term.dsub (toDB N) x.val (toDB M) := by
   induction M using TermAlpha.ind with
   | _ m =>
@@ -414,7 +414,7 @@ theorem toDB_injective {M N : TermAlpha Atom} (h : toDB M = toDB N) : M = N := b
     | _ n => exact fromTerm_dsub m n x
 
 /-- Inversion of `f` at an application, on `Λα`. -/
-theorem toDB_eq_app {M : TermAlpha Atom} {d₁ d₂ : Term} (h : toDB M = Term.app d₁ d₂) :
+lemma toDB_eq_app {M : TermAlpha Atom} {d₁ d₂ : Term} (h : toDB M = Term.app d₁ d₂) :
     ∃ M₁ M₂ : TermAlpha Atom, M = TermAlpha.app M₁ M₂ ∧ toDB M₁ = d₁ ∧ toDB M₂ = d₂ := by
   induction M using TermAlpha.ind with
   | _ m =>
@@ -422,7 +422,7 @@ theorem toDB_eq_app {M : TermAlpha Atom} {d₁ d₂ : Term} (h : toDB M = Term.a
     exact ⟨⟦m₁⟧α, ⟦m₂⟧α, by rw [hm]; rfl, h₁, h₂⟩
 
 /-- Inversion of `f` at an abstraction, on `Λα`. -/
-theorem toDB_eq_dLAM {M : TermAlpha Atom} {i : ℕ} {d : Term} (h : toDB M = Term.dLAM i d) :
+lemma toDB_eq_dLAM {M : TermAlpha Atom} {i : ℕ} {d : Term} (h : toDB M = Term.dLAM i d) :
     ∃ M₀ : TermAlpha Atom, M = TermAlpha.abs (Atom.ofNat i) M₀ ∧ toDB M₀ = d := by
   induction M using TermAlpha.ind with
   | _ m =>
@@ -431,7 +431,7 @@ theorem toDB_eq_dLAM {M : TermAlpha Atom} {i : ℕ} {d : Term} (h : toDB M = Ter
 
 /-- The "→" half of Theorem 12: a rule induction on `→βα`; the contraction case is exactly
 `fromTerm_dsub`. -/
-theorem dbeta'_of_betaAlpha {M N : TermAlpha Atom} (h : BetaAlpha M N) :
+lemma dbeta'_of_betaAlpha {M N : TermAlpha Atom} (h : BetaAlpha M N) :
     DBeta' (toDB M) (toDB N) := by
   induction h with
   | red x M N => simpa using DBeta'.red x.val (toDB M) (toDB N)
@@ -440,7 +440,7 @@ theorem dbeta'_of_betaAlpha {M N : TermAlpha Atom} (h : BetaAlpha M N) :
   | abs x _ ih => simpa using DBeta'.lam x.val ih
 
 /-- The "←" half of Theorem 12: a rule induction on `→d'`, using the inversion lemmas for `f`. -/
-theorem betaAlpha_of_dbeta' : ∀ {t u : Term}, DBeta' t u →
+lemma betaAlpha_of_dbeta' : ∀ {t u : Term}, DBeta' t u →
     ∀ M N : TermAlpha Atom, toDB M = t → toDB N = u → BetaAlpha M N := by
   intro t u h
   induction h with

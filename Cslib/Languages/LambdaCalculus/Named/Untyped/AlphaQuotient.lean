@@ -80,7 +80,7 @@ def mk (m : Term Var) : TermAlpha Var := Quotient.mk (Term.alphaSetoid Var) m
 
 @[inherit_doc] scoped notation "⟦" m "⟧α" => TermAlpha.mk m
 
-theorem mk_eq_mk {m n : Term Var} : (⟦m⟧α : TermAlpha Var) = ⟦n⟧α ↔ m =α n :=
+lemma mk_eq_mk {m n : Term Var} : (⟦m⟧α : TermAlpha Var) = ⟦n⟧α ↔ m =α n :=
   ⟨fun h => Quotient.exact h, fun h => Quotient.sound h⟩
 
 /-- Variables of `Λα`. -/
@@ -100,15 +100,15 @@ def subst (M : TermAlpha Var) (x : Var) (N : TermAlpha Var) : TermAlpha Var :=
   Quotient.map₂ (fun m n => m[x := n])
     (fun _ _ h₁ _ _ h₂ => Term.subst.preserve_AlphaEquiv h₁ h₂) M N
 
-@[simp] theorem app_mk (m n : Term Var) : app ⟦m⟧α ⟦n⟧α = ⟦Term.app m n⟧α := rfl
+@[simp] lemma app_mk (m n : Term Var) : app ⟦m⟧α ⟦n⟧α = ⟦Term.app m n⟧α := rfl
 
-@[simp] theorem abs_mk (x : Var) (m : Term Var) : abs x ⟦m⟧α = ⟦Term.abs x m⟧α := rfl
+@[simp] lemma abs_mk (x : Var) (m : Term Var) : abs x ⟦m⟧α = ⟦Term.abs x m⟧α := rfl
 
-@[simp] theorem subst_mk (m n : Term Var) (x : Var) :
+@[simp] lemma subst_mk (m n : Term Var) (x : Var) :
     subst ⟦m⟧α x ⟦n⟧α = ⟦m[x := n]⟧α := rfl
 
 /-- Induction principle for `Λα`: every element is the class of a raw term. -/
-@[elab_as_elim] theorem ind {motive : TermAlpha Var → Prop} (h : ∀ m, motive ⟦m⟧α) (M) :
+@[elab_as_elim] lemma ind {motive : TermAlpha Var → Prop} (h : ∀ m, motive ⟦m⟧α) (M) :
     motive M := Quotient.ind h M
 
 end TermAlpha
