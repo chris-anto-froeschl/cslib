@@ -39,9 +39,7 @@ here is only the quotient packaging:
 
 * `Term.alphaSetoid`, `TermAlpha` : the type `Λα`.
 * `TermAlpha.var`, `TermAlpha.app`, `TermAlpha.abs`, `TermAlpha.subst` : the operations of `Λα`,
-  obtained by lifting the corresponding operations of `Λvar` through the quotient.  Note that
-  `TermAlpha.abs` is *not* injective, which is precisely the reason the paper needs
-  Pitts-style recursion (or, here, a lifting argument) to define the map into `dB`.
+  lifted from `Λvar` through the quotient. `TermAlpha.abs` is not injective.
 * `BetaAlpha` : β-reduction of `λNα`, defined directly at the quotient level.
 
 ## References
@@ -76,6 +74,7 @@ def mk (m : Term Var) : TermAlpha Var := Quotient.mk (Term.alphaSetoid Var) m
 
 @[inherit_doc] scoped notation "⟦" m "⟧α" => TermAlpha.mk m
 
+/-- Two raw terms have the same class iff they are α-equivalent. -/
 lemma mk_eq_mk {m n : Term Var} : (⟦m⟧α : TermAlpha Var) = ⟦n⟧α ↔ m =α n :=
   ⟨fun h => Quotient.exact h, fun h => Quotient.sound h⟩
 
@@ -96,11 +95,14 @@ def subst (M : TermAlpha Var) (x : Var) (N : TermAlpha Var) : TermAlpha Var :=
   Quotient.map₂ (fun m n => m[x := n])
     (fun _ _ h₁ _ _ h₂ => Term.subst.preserve_AlphaEquiv h₁ h₂) M N
 
-@[simp] lemma app_mk (m n : Term Var) : app ⟦m⟧α ⟦n⟧α = ⟦Term.app m n⟧α := rfl
+/-- Application on classes is application on representatives. -/
+lemma app_mk (m n : Term Var) : app ⟦m⟧α ⟦n⟧α = ⟦Term.app m n⟧α := rfl
 
-@[simp] lemma abs_mk (x : Var) (m : Term Var) : abs x ⟦m⟧α = ⟦Term.abs x m⟧α := rfl
+/-- Abstraction on classes is abstraction on representatives. -/
+lemma abs_mk (x : Var) (m : Term Var) : abs x ⟦m⟧α = ⟦Term.abs x m⟧α := rfl
 
-@[simp] lemma subst_mk (m n : Term Var) (x : Var) :
+/-- Substitution on classes is substitution on representatives. -/
+lemma subst_mk (m n : Term Var) (x : Var) :
     subst ⟦m⟧α x ⟦n⟧α = ⟦m[x := n]⟧α := rfl
 
 /-- Induction principle for `Λα`: every element is the class of a raw term. -/

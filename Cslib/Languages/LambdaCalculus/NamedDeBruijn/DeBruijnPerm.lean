@@ -68,32 +68,27 @@ def gincAtom (g : ℕ) (a : Atom) : Atom := if a.val < g then a else ⟨a.val + 
 /-- The inverse of `gincAtom g` on its image (which is everything but the atom `ĝ`). -/
 def gdecAtom (g : ℕ) (a : Atom) : Atom := if a.val ≤ g then a else ⟨a.val - 1⟩
 
-@[simp] lemma gdecAtom_gincAtom (g : ℕ) (a : Atom) : gdecAtom g (gincAtom g a) = a := by
-  by_cases h : a.val < g
-  · simp [gincAtom, gdecAtom, h, Nat.le_of_lt h]
-  · have h' : ¬ (a.val + 1 ≤ g) := by omega
-    simp [gincAtom, gdecAtom, h, h']
+/-- `gdecAtom g` undoes `gincAtom g`. -/
+lemma gdecAtom_gincAtom (g : ℕ) (a : Atom) : gdecAtom g (gincAtom g a) = a := by
+  unfold gdecAtom gincAtom
+  split_ifs <;> grind
 
 /-- HOL `ginc_neq`: `ginc` never hits the guard. -/
-@[simp] lemma gincAtom_ne (g : ℕ) (a : Atom) : (gincAtom g a).val ≠ g := by
+lemma gincAtom_ne (g : ℕ) (a : Atom) : (gincAtom g a).val ≠ g := by
   by_cases h : a.val < g <;> simp [gincAtom, h] <;> omega
 
+/-- `gincAtom g` undoes `gdecAtom g` on every atom other than the guard. -/
 lemma gincAtom_gdecAtom {g : ℕ} {a : Atom} (h : a.val ≠ g) : gincAtom g (gdecAtom g a) = a := by
-  rcases lt_trichotomy a.val g with hlt | heq | hgt
-  · simp [gincAtom, gdecAtom, hlt, Nat.le_of_lt hlt]
-  · exact absurd heq h
-  · have h1 : ¬ (a.val ≤ g) := by omega
-    have h2 : ¬ (a.val - 1 < g) := by omega
-    simp only [gdecAtom, h1, ite_false, gincAtom, h2]
-    ext
-    simp
-    omega
+  obtain ⟨v⟩ := a
+  unfold gdecAtom gincAtom
+  split_ifs <;> grind
 
 /-- The underlying function of `incPerm`: `π` transported along `gincAtom g`, and the identity at
 the guard (compare HOL `lswapstr_inc_pm`). -/
 def incFun (g : ℕ) (π : FinPerm) (a : Atom) : Atom :=
   if a.val = g then a else gincAtom g (π (gdecAtom g a))
 
+/-- `incFun g π⁻¹` is a right inverse of `incFun g π`. -/
 lemma incFun_incFun_inv (g : ℕ) (π : FinPerm) (a : Atom) :
     incFun g π (incFun g π⁻¹ a) = a := by
   by_cases h : a.val = g
@@ -104,6 +99,7 @@ lemma incFun_incFun_inv (g : ℕ) (π : FinPerm) (a : Atom) :
       Equiv.apply_symm_apply π.val (gdecAtom g a)]
     exact gincAtom_gdecAtom h
 
+/-- `incFun g π⁻¹` is a left inverse of `incFun g π`. -/
 lemma incFun_inv_incFun (g : ℕ) (π : FinPerm) (a : Atom) :
     incFun g π⁻¹ (incFun g π a) = a := by
   have h := incFun_incFun_inv g π⁻¹ a
@@ -124,9 +120,10 @@ def incPerm (g : ℕ) (π : FinPerm) : FinPerm :=
       change incFun g π a = a
       rw [incFun, ite_eq_right hne, π.suppWitness_spec _ hnot, gincAtom_gdecAtom hne]⟩
 
+/-- `incPerm g π` acts on atoms as `incFun g π`. -/
 lemma incPerm_apply (g : ℕ) (π : FinPerm) (a : Atom) :
-    incPerm g π a = incFun g π a := by
-  simp [incPerm, FinPerm.apply]
+    incPerm g π a = incFun g π a :=
+  rfl
 
 /-- The action of an incremented permutation with guard `0`, in terms of indices. -/
 lemma incFun_zero_val (π : FinPerm) (v : ℕ) :
@@ -140,7 +137,7 @@ lemma lift_var_eq (i n : ℕ) : lift (var i) n = var (gincAtom n (Atom.ofNat i))
   by_cases h : i < n <;> simp [lift_var, gincAtom, Atom.ofNat, h]
 
 /-- Incrementing the identity permutation gives the identity. -/
-@[simp] lemma incPerm_one (g : ℕ) : incPerm g 1 = 1 := by
+lemma incPerm_one (g : ℕ) : incPerm g 1 = 1 := by
   refine FinPerm.ext (fun a => ?_)
   simp only [incPerm_apply, incFun, FinPerm.one_apply]
   split_ifs with h
@@ -171,12 +168,14 @@ def dpm (π : FinPerm) : Term → Term
   | app t u => app (dpm π t) (dpm π u)
   | abs t => abs (dpm (incPerm 0 π) t)
 
+/-- The identity permutation acts trivially (first condition of (4)). -/
 lemma dpm_one (t : Term) : dpm 1 t = t := by
   induction t with
   | var i => simp [dpm]
   | app t u iht ihu => simp [dpm, iht, ihu]
   | abs t ih => simp only [dpm, incPerm_one, ih]
 
+/-- Acting by a product is acting twice (second condition of (4)). -/
 lemma dpm_mul (π₁ π₂ : FinPerm) (t : Term) : dpm (π₁ * π₂) t = dpm π₁ (dpm π₂ t) := by
   induction t generalizing π₁ π₂ with
   | var i => simp [dpm]
@@ -189,13 +188,14 @@ instance : MulAction FinPerm Term where
   one_smul := dpm_one
   mul_smul := dpm_mul
 
-lemma smul_def (π : FinPerm) (t : Term) : π • t = dpm π t := rfl
+/-- Definition 8, `dV` case: `π · dV i = dV (π(î))`. -/
+lemma dpm_var (π : FinPerm) (i : ℕ) : π • var i = var (π (Atom.ofNat i)).val := rfl
 
-@[simp] lemma dpm_var (π : FinPerm) (i : ℕ) : π • var i = var (π (Atom.ofNat i)).val := rfl
+/-- Definition 8, `dAPP` case. -/
+lemma dpm_app (π : FinPerm) (t u : Term) : π • app t u = app (π • t) (π • u) := rfl
 
-@[simp] lemma dpm_app (π : FinPerm) (t u : Term) : π • app t u = app (π • t) (π • u) := rfl
-
-@[simp] lemma dpm_abs (π : FinPerm) (t : Term) : π • abs t = abs ((incPerm 0 π) • t) := rfl
+/-- Definition 8, `dABS` case: under a binder the permutation is incremented. -/
+lemma dpm_abs (π : FinPerm) (t : Term) : π • abs t = abs ((incPerm 0 π) • t) := rfl
 
 /-- The free indices of a permuted term. -/
 lemma mem_dFV_dpm (π : FinPerm) (t : Term) (i : ℕ) :
@@ -207,29 +207,22 @@ lemma mem_dFV_dpm (π : FinPerm) (t : Term) (i : ℕ) :
       · rintro rfl; exact ⟨m, rfl, rfl⟩
       · rintro ⟨j, hj, rfl⟩; rw [hj]
   | app t u iht ihu =>
-      simp only [dpm_app, mem_dFV_app, iht, ihu]
-      constructor
-      · rintro (⟨j, hj, hv⟩ | ⟨j, hj, hv⟩) <;> exact ⟨j, by simp [hj], hv⟩
-      · rintro ⟨j, hj, hv⟩
-        rcases hj with hj | hj
-        · exact Or.inl ⟨j, hj, hv⟩
-        · exact Or.inr ⟨j, hj, hv⟩
+      simp only [dpm_app, mem_dFV_app, iht, ihu, or_and_right, exists_or]
   | abs t ih =>
       simp only [dpm_abs, mem_dFV_abs, ih]
       constructor
       · rintro ⟨j, hj, hv⟩
         rw [incPerm_apply, incFun_zero_val] at hv
         split_ifs at hv with h0
-        refine ⟨j - 1, ?_, by omega⟩
-        have hjj : j - 1 + 1 = j := by omega
-        rwa [hjj]
+        exact ⟨j - 1, by rwa [Nat.sub_add_cancel (by omega)], by omega⟩
       · rintro ⟨j, hj, hv⟩
         refine ⟨j + 1, hj, ?_⟩
         rw [incPerm_apply, incFun_zero_val]
         simp only [Nat.add_one_ne_zero, ite_false, Nat.add_sub_cancel, hv]
 
-/-- The support of a de Bruijn term is its set of free indices, converted into atoms via the
-hat-isomorphism (paper, Section 4.2; HOL `dpm_supp`). -/
+/-- The free indices of a de Bruijn term, as atoms, support it (paper, Section 4.2; HOL
+`dpm_fresh`). HOL's `dpm_supp` also shows that they are the least support; that is not needed
+here. -/
 lemma supports_dFV (t : Term) : Supports ((dFV t).image Atom.ofNat) t := by
   intro π hπ
   induction t generalizing π with
@@ -238,15 +231,8 @@ lemma supports_dFV (t : Term) : Supports ((dFV t).image Atom.ofNat) t := by
       rw [dpm_var, hfix]
       rfl
   | app t u iht ihu =>
-      have h1 := iht π (fun a ha => hπ a (by
-        simp only [Finset.mem_image, mem_dFV_app] at ha ⊢
-        obtain ⟨j, hj, rfl⟩ := ha
-        exact ⟨j, Or.inl hj, rfl⟩))
-      have h2 := ihu π (fun a ha => hπ a (by
-        simp only [Finset.mem_image, mem_dFV_app] at ha ⊢
-        obtain ⟨j, hj, rfl⟩ := ha
-        exact ⟨j, Or.inr hj, rfl⟩))
-      rw [dpm_app, h1, h2]
+      rw [dpm_app, iht π (fun a ha => hπ a ?_), ihu π (fun a ha => hπ a ?_)] <;>
+        grind [mem_dFV_app]
   | abs t ih =>
       rw [dpm_abs]
       refine congrArg abs (ih (incPerm 0 π) (fun a ha => ?_))
@@ -263,6 +249,8 @@ lemma supports_dFV (t : Term) : Supports ((dFV t).image Atom.ofNat) t := by
         simp only [Atom.ofNat]
         omega
 
+/-- Permuting a term permutes its free indices (set form of HOL `IN_dFV_dpm`).  Only used for
+the `NomSet` instance below. -/
 lemma dFV_dpm (t : Term) (π : FinPerm) :
     (dFV (π • t)).image Atom.ofNat = ((dFV t).image Atom.ofNat).image (π ·) := by
   ext a
@@ -273,7 +261,9 @@ lemma dFV_dpm (t : Term) (π : FinPerm) :
   · rintro ⟨b, ⟨j, hj, rfl⟩, rfl⟩
     exact ⟨(π (Atom.ofNat j)).val, ⟨j, hj, rfl⟩, Atom.val_ofNat _⟩
 
-/-- de Bruijn terms form a nominal set, with support the set of free indices. -/
+/-- de Bruijn terms form a nominal set, with support the set of free indices (paper,
+Section 4.2).  Not used by the current proofs, which define `f` on raw terms; kept for a future
+definition of `f` by Pitts' recursion, which needs it. -/
 instance : NomSet Term where
   toMulAction := inferInstance
   supp t := (dFV t).image Atom.ofNat
@@ -300,12 +290,10 @@ theorem dpm_dsub (π : FinPerm) (t : Term) (j : ℕ) (u : Term) :
   induction u generalizing π t j with
   | var m =>
       simp only [dsub_var, dpm_var]
-      by_cases h : m = j
-      · subst h
-        simp only [ite_true]
-      · have h2 : ¬ ((π (Atom.ofNat m)).val = (π (Atom.ofNat j)).val) := by
-          intro he
-          exact h (congrArg Atom.val (π.val.injective (Atom.ext he)))
+      obtain rfl | h := eq_or_ne m j
+      · simp only [ite_true]
+      · have h2 : (π (Atom.ofNat m)).val ≠ (π (Atom.ofNat j)).val := fun he =>
+          h (congrArg Atom.val (π.val.injective (Atom.ext he)))
         simp only [h, h2, ite_false, dpm_var]
   | app u₁ u₂ ih₁ ih₂ => simp only [dsub_app, dpm_app, ih₁, ih₂]
   | abs u ih =>
@@ -333,7 +321,7 @@ lemma DBeta'.dpm {t u : Term} (h : t →d' u) (π : FinPerm) : (π • t) →d' 
 
 /-- **Theorem 10**, equivariance of `→d'`: `π · t →d' π · u ⇔ t →d' u`.  The backward direction
 follows from the forward one because all permutations have inverses. -/
-theorem DBeta'.equivariant {t u : Term} (π : FinPerm) : (π • t) →d' (π • u) ↔ t →d' u := by
+theorem DBeta'.equivariant (π : FinPerm) (t u : Term) : (π • t) →d' (π • u) ↔ t →d' u := by
   refine ⟨fun h => ?_, fun h => h.dpm π⟩
   have h2 := h.dpm π⁻¹
   rwa [inv_smul_smul, inv_smul_smul] at h2

@@ -55,7 +55,7 @@ lemma dbeta'_of_beta {t u : Term} (h : Beta t u) : DBeta' t u := by
   | appR _ ih => exact DBeta'.appR _ ih
   | abs _ ih =>
       exact (dABS_rules_are_dLAM_compatible DBeta'
-        (fun π _ _ => DBeta'.equivariant π)).mpr (fun i _ _ h => DBeta'.lam i h) _ _ ih
+        DBeta'.equivariant).mpr (fun i _ _ h => DBeta'.lam i h) _ _ ih
 
 /-- **Lemma 17** (HOL `dpm_nsub`): `π · (nsub t i u) = nsub (π · t) i (inc i (π) · u)`. -/
 lemma dpm_nsub (π : FinPerm) (t : Term) (i : ℕ) (u : Term) :
