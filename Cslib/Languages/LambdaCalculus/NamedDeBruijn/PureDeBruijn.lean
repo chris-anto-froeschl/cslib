@@ -12,8 +12,7 @@ public import Mathlib.Data.Finset.Image
 
 /-! # de Bruijn
 
-Covers the material of the [Norrish2007a] Section 2.2 and the first half of
-Section 4.1.
+Covers the material of the [Norrish2007a] Section 2.2 and the first half of Section 4.1.
 
 ## The paper's `dB` versus Cslib's `Unscoped.Untyped.Term`
 
