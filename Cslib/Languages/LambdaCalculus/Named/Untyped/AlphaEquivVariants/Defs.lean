@@ -34,6 +34,9 @@ A weaker side condition can only relate more terms, so `∼p ⊆ ∼p#`, `∼p �
 are clear. That all five coincide is Section 4 of [Crole2012]; see
 `AlphaEquivVariants/Equalities.lean`.
 
+The file also defines `∼²p` and `∼³p` from Proposition 4.3 [Crole2012], two further weakenings
+of the side condition of `∼p` that no longer give α-equivalence.
+
 ## References
 
 * [Roy L. Crole, *Alpha equivalence equalities*][Crole2012]
@@ -113,6 +116,34 @@ inductive AlphaEquivP1 : Term Var → Term Var → Prop where
   | app {m1 n1 m2 n2 : Term Var} :
     AlphaEquivP1 m1 n1 → AlphaEquivP1 m2 n2 →
     AlphaEquivP1 (app m1 m2) (app n1 n2)
+
+/-- `∼²p` from Proposition 4.3 [Crole2012]: `∼p` with the side condition of the rule `pi`
+weakened to "the new atom differs from the two binders".
+
+The condition no longer keeps the new atom away from the free atoms of the bodies, so a swap can
+turn a free atom into a bound one; the relation then relates terms with different free atoms and
+is strictly larger than `∼p`. The rule is stated with `swap`, since without non-occurrence a swap
+and a renaming differ. -/
+inductive AlphaEquivP2 : Term Var → Term Var → Prop where
+  | var {x : Var} : AlphaEquivP2 (var x) (var x)
+  | abs {z x1 x2 : Var} {m1 m2 : Term Var} :
+    z ∉ ({x1, x2} : Finset Var) →
+    AlphaEquivP2 (m1.swap z x1) (m2.swap z x2) →
+    AlphaEquivP2 (abs x1 m1) (abs x2 m2)
+  | app {m1 n1 m2 n2 : Term Var} :
+    AlphaEquivP2 m1 n1 → AlphaEquivP2 m2 n2 →
+    AlphaEquivP2 (app m1 m2) (app n1 n2)
+
+/-- `∼³p` from Proposition 4.3 [Crole2012]: `∼p` with no side condition on the new atom at all.
+Like `∼²p`, it is strictly larger than `∼p`. -/
+inductive AlphaEquivP3 : Term Var → Term Var → Prop where
+  | var {x : Var} : AlphaEquivP3 (var x) (var x)
+  | abs {z x1 x2 : Var} {m1 m2 : Term Var} :
+    AlphaEquivP3 (m1.swap z x1) (m2.swap z x2) →
+    AlphaEquivP3 (abs x1 m1) (abs x2 m2)
+  | app {m1 n1 m2 n2 : Term Var} :
+    AlphaEquivP3 m1 n1 → AlphaEquivP3 m2 n2 →
+    AlphaEquivP3 (app m1 m2) (app n1 n2)
 
 /-- **Definition 3.4** [Crole2012]: `∼r`, the textbook α-equivalence.
 
