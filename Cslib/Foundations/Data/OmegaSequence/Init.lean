@@ -9,15 +9,15 @@ module
 public import Cslib.Foundations.Data.OmegaSequence.Defs
 public import Mathlib.Algebra.Order.Group.Nat
 public import Mathlib.Algebra.Order.Sub.Basic
-public import Mathlib.Data.Nat.Lattice
-
-@[expose] public section
+public import Mathlib.Order.Lattice.Nat
 
 /-!
 # ω-sequences a.k.a. infinite sequences
 
 Most code below is adapted from Mathlib.Data.Stream.Init.
 -/
+
+@[expose] public section
 
 namespace Cslib
 
@@ -31,6 +31,9 @@ variable (m n : ℕ) (x y : List α) (a b : ωSequence α)
 
 instance [Inhabited α] : Inhabited (ωSequence α) :=
   ⟨ωSequence.const default⟩
+
+instance [h : IsEmpty α] : IsEmpty (ωSequence α) where
+  false xs := IsEmpty.false (xs 0)
 
 @[simp, scoped grind =]
 protected theorem eta (s : ωSequence α) : head s ::ω tail s = s := by
@@ -94,6 +97,11 @@ theorem get_succ_cons (n : ℕ) (s : ωSequence α) (x : α) : (x ::ω s) n.succ
 @[simp, scoped grind =]
 lemma get_cons_append_zero {a : α} {x : List α} {s : ωSequence α} :
     (a :: x ++ω s) 0 = a := rfl
+
+lemma append_get_zero_of_ne_nil {x : List α} {s : ωSequence α} (h : x ≠ []) :
+    (x ++ω s) 0 = x.head h := by
+  rw! [← List.cons_head_tail h, get_cons_append_zero]
+  simp
 
 @[simp, scoped grind =]
 lemma append_eq_cons {a : α} {as : ωSequence α} : [a] ++ω as = a ::ω as := rfl
@@ -247,6 +255,9 @@ theorem nil_append_ωSequence (s : ωSequence α) : appendωSequence [] s = s :=
 theorem cons_append_ωSequence (a : α) (l : List α) (s : ωSequence α) :
     appendωSequence (a :: l) s = a ::ω appendωSequence l s :=
   rfl
+
+@[simp] theorem singleton_append_ωSequence (a : α) (s : ωSequence α) :
+  [a] ++ω s = a ::ω s := rfl
 
 @[simp, scoped grind =]
 theorem append_append_ωSequence : ∀ (l₁ l₂ : List α) (s : ωSequence α),
@@ -472,7 +483,7 @@ theorem extract_eq_nil {xs : ωSequence α} {n : ℕ} :
 
 @[simp, scoped grind =]
 theorem extract_eq_nil_iff {xs : ωSequence α} {m n : ℕ} :
-    xs.extract m n = [] ↔ m ≥ n := by
+    xs.extract m n = [] ↔ n ≤ m := by
   rw [← List.length_eq_zero_iff]
   grind [extract_eq_drop_take]
 
@@ -516,8 +527,10 @@ theorem take_extract {xs : ωSequence α} {m n k : ℕ} (h : k ≤ n - m) :
 @[simp, scoped grind =]
 theorem drop_extract {xs : ωSequence α} {m n k : ℕ} (h : k ≤ n - m) :
     (xs.extract m n).drop k = xs.extract (m + k) n := by
-  have := extract_lu_extract_lu (xs := xs) (m := m) (n := n) (i := k) (j := n - m)
-  grind [length_extract, List.take_length]
+  by_cases m ≤ n
+  · grind only [extract_lu_extract_lu, length_extract, List.length_drop, List.take_length]
+  · have : k = 0 := by grind only
+    grind only [List.drop_zero]
 
 end ωSequence
 

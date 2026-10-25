@@ -6,10 +6,9 @@ Authors: Thomas Waring
 
 module
 
-public import Cslib.Foundations.Data.Relation
+public import Cslib.Foundations.Relation.Attr
+public import Cslib.Foundations.Relation.Defs
 public meta import Mathlib.Tactic.ToDual
-
-@[expose] public section
 
 /-!
 # SKI Combinatory Logic
@@ -36,11 +35,13 @@ The setup of SKI combinatory logic is standard, see for example:
 - <https://en.m.wikipedia.org/wiki/Combinatory_logic>
 -/
 
+@[expose] public section
+
 namespace Cslib
 
 /-- An SKI expression is built from the primitive combinators `S`, `K` and `I`, and application. -/
 inductive SKI where
-  /-- `S`-combinator, with semantics $λxyz.xz(yz) -/
+  /-- `S`-combinator, with semantics $λxyz.xz(yz)$ -/
   | S
   /-- `K`-combinator, with semantics $λxy.x$ -/
   | K
@@ -112,11 +113,17 @@ lemma parallel_mRed {a a' b b' : SKI} (ha : a ↠ a') (hb : b ↠ b') :
 lemma parallel_red {a a' b b' : SKI} (ha : a ⭢ a') (hb : b ⭢ b') : (a ⬝ b) ↠ (a' ⬝ b') := by
   trans a' ⬝ b <;> grind
 
-theorem mJoin_red_head {x x' : SKI} (y : SKI) : MJoin Red x x' → MJoin Red (x ⬝ y) (x' ⬝ y)
+theorem join_mRed_head {x x' : SKI} (y : SKI) :
+    Join (ReflTransGen Red) x x' → Join (ReflTransGen Red) (x ⬝ y) (x' ⬝ y)
   | ⟨z, hz, hz'⟩ => ⟨z ⬝ y, MRed.head y hz, MRed.head y hz'⟩
 
-theorem mJoin_red_tail (x : SKI) {y y' : SKI} : MJoin Red y y' → MJoin Red (x ⬝ y) (x ⬝ y')
+@[deprecated (since := "2026-09-12")] alias mJoin_red_head := join_mRed_head
+
+theorem join_mRed_tail (x : SKI) {y y' : SKI} :
+    Join (ReflTransGen Red) y y' → Join (ReflTransGen Red) (x ⬝ y) (x ⬝ y')
   | ⟨z, hz, hz'⟩ => ⟨x ⬝ z, MRed.tail x hz, MRed.tail x hz'⟩
+
+@[deprecated (since := "2026-09-12")] alias mJoin_red_tail := join_mRed_tail
 
 end SKI
 

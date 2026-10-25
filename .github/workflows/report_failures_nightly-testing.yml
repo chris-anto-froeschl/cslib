@@ -21,11 +21,11 @@ jobs:
         api-key: ${{ secrets.ZULIP_API_KEY }}
         email: 'github-mathlib4-bot@leanprover.zulipchat.com'
         organization-url: 'https://leanprover.zulipchat.com'
-        to: 'nightly-testing'
+        to: 'nightly-testing-cslib'
         type: 'stream'
         topic: 'Cslib status updates'
         content: |
-          ❌ The latest CI for Cslib's [nightly-testing branch](https://github.com/leanprover/cslib/tree/nightly-testing) has [failed](https://github.com/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}) ([${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})).
+          ❌ The latest CI for Cslib's [nightly-testing branch](https://github.com/leanprover/cslib/tree/nightly-testing) has [failed](https://github.com/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}) ([${{ github.event.workflow_run.head_sha }}](https://github.com/${{ github.repository }}/commit/${{ github.event.workflow_run.head_sha }})).
           You can `git fetch; git checkout nightly-testing` and push a fix.
 
   handle_success:
@@ -80,7 +80,7 @@ jobs:
     # Now post a success message to zulip, if the last message there is not a success message.
     # https://chat.openai.com/share/87656d2c-c804-4583-91aa-426d4f1537b3
     - name: Install Zulip API client
-      run: pip install zulip
+      run: pip install -r .github/requirements.txt
 
     - name: Check last message and post if necessary
       env:
@@ -101,7 +101,7 @@ jobs:
           'num_before': 1,
           'num_after': 0,
           'narrow': [
-            {'operator': 'stream', 'operand': 'nightly-testing'},
+            {'operator': 'stream', 'operand': 'nightly-testing-cslib'},
             {'operator': 'topic', 'operand': 'Cslib status updates'},
             {'operator': 'sender', 'operand': bot_email}
           ],
@@ -113,7 +113,7 @@ jobs:
             # Post the success message
             request = {
                 'type': 'stream',
-                'to': 'nightly-testing',
+                'to': 'nightly-testing-cslib',
                 'topic': 'Cslib status updates',
                 'content': f"✅ The latest CI for Cslib's [nightly-testing branch](https://github.com/leanprover/cslib/tree/nightly-testing) has succeeded! ([{os.getenv('SHA')}](https://github.com/${{ github.repository }}/commit/{os.getenv('SHA')}))"
             }
@@ -250,7 +250,7 @@ jobs:
         api-key: ${{ secrets.ZULIP_API_KEY }}
         email: 'github-mathlib4-bot@leanprover.zulipchat.com'
         organization-url: 'https://leanprover.zulipchat.com'
-        to: 'nightly-testing'
+        to: 'nightly-testing-cslib'
         type: 'stream'
         topic: 'Cslib status updates'
         content: |
@@ -268,9 +268,10 @@ jobs:
         BUMP_VERSION: ${{ steps.bump_version.outputs.result }}
         BUMP_BRANCH: ${{ steps.latest_bump_branch.outputs.result }}
         SHA: ${{ env.SHA }}
+        ZULIP_API_KEY: ${{ secrets.ZULIP_API_KEY }}
       run: |
         echo "Installing zulip CLI..."
-        pip install zulip
+        pip install -r .github/requirements.txt
         echo "Configuring git identity for mathlib4-bot..."
         git config --global user.name "mathlib4-bot"
         git config --global user.email "github-mathlib4-bot@leanprover.zulipchat.com"
@@ -278,7 +279,7 @@ jobs:
         {
           echo "[api]"
           echo "email=github-mathlib4-bot@leanprover.zulipchat.com"
-          echo "key=${{ secrets.ZULIP_API_KEY }}"
+          echo "key=$ZULIP_API_KEY"
           echo "site=https://leanprover.zulipchat.com"
         } > ~/.zuliprc
         chmod 600 ~/.zuliprc
@@ -350,7 +351,7 @@ jobs:
               'num_before': 1,
               'num_after': 0,
               'narrow': [
-                {'operator': 'stream', 'operand': 'nightly-testing'},
+                {'operator': 'stream', 'operand': 'nightly-testing-cslib'},
                 {'operator': 'topic', 'operand': 'Cslib bump branch reminders'},
                 {'operator': 'sender', 'operand': bot_email}
               ],
@@ -388,7 +389,7 @@ jobs:
                 # Post the reminder message
                 request = {
                     'type': 'stream',
-                    'to': 'nightly-testing',
+                    'to': 'nightly-testing-cslib',
                     'topic': 'Cslib bump branch reminders',
                     'content': payload
                 }

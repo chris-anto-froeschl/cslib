@@ -8,9 +8,9 @@ module
 
 public import Cslib.Languages.LambdaCalculus.LocallyNameless.Untyped.Properties
 
-public section
-
 /-! # Congruence for the λ-calculus -/
+
+public section
 
 namespace Cslib
 
@@ -46,6 +46,14 @@ lemma step_lc_r (hR : ∀ {M' N'}, R M' N' → LC N') (step : Xi R M N) : LC N :
     constructor
     exact ih
   | _ => grind
+
+/-- The left side of a congruence step is locally closed. -/
+lemma step_lc_l (hR : ∀ {M' N'}, R M' N' → LC M') (step : Xi R M N) : LC M := by
+  induction step with
+  | base h => exact hR h
+  | appL lc_Z _ ih => exact LC.app lc_Z ih
+  | appR lc_Z _ ih => exact LC.app ih lc_Z
+  | abs xs _ ih => exact LC.abs xs _ ih
 
 end Xi
 

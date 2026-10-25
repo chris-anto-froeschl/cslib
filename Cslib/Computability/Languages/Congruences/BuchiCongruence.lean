@@ -10,8 +10,6 @@ public import Cslib.Computability.Automata.NA.Pair
 public import Cslib.Foundations.Combinatorics.InfiniteGraphRamsey
 public import Cslib.Foundations.Data.Set.Saturation
 
-@[expose] public section
-
 /-!
 # Buchi Congruence
 
@@ -19,18 +17,22 @@ A special type of right congruences used by J.R. Büchi to prove the closure
 of ω-regular languages under complementation.
 -/
 
+@[expose] public section
+
 namespace Cslib.Automata.NA.Buchi
 
-open Function Set Filter ωAcceptor ωLanguage ωSequence
+open Function Set Filter ωAcceptor ωLanguage ωSequence LTS.Execution
+open _root_.Language RightCongruence
 
 variable {Symbol : Type*} {State : Type}
 
+set_option linter.tacticAnalysis.verifyGrindOnly false in
 /-- Given a Buchi automaton `na`, two finite words `u` and `v` are Buchi-congruent
 according to `na` iff for every pair of states `s` and `t` of `na`, both of the
 following two conditions hold:
 (1) `u` can move `na` from `s` to `t` iff `v` can move `na` from `s` to `t`;
-(2) `u` can move `na` from `s` to `t` via an acceptingg states iff `v` can move `na`
-from `s` to `t` via an acceptingg states. -/
+(2) `u` can move `na` from `s` to `t` via an accepting states iff `v` can move `na`
+from `s` to `t` via an accepting states. -/
 @[implicit_reducible]
 def BuchiCongruence (na : Buchi State Symbol) : RightCongruence Symbol where
   eq.r u v :=
@@ -40,7 +42,7 @@ def BuchiCongruence (na : Buchi State Symbol) : RightCongruence Symbol where
   eq.iseqv.symm := by grind
   eq.iseqv.trans := by grind
   right_cov.elim := by
-    grind [Covariant, → LTS.pairLang_split, <= LTS.pairLang_append, → LTS.pairViaLang_split,
+    grind only [Covariant, → LTS.pairLang_split, <= LTS.pairLang_append, → LTS.pairViaLang_split,
       <= LTS.pairViaLang_append_pairLang, <= LTS.pairLang_append_pairViaLang]
 
 open scoped Classical in
@@ -89,11 +91,15 @@ lemma buchiCongruence_transfer
     have : ⟦xl⟧ = a := mem_singleton_iff.mp <| mem_preimage.mp hc
     have : ⟦yl⟧ = a := mem_singleton_iff.mp <| mem_preimage.mp hc'
     grind
-  have := h_eq s t
-  have h_yl : yl ∈ na.pairLang s t := by grind
-  have := LTS.Execution.of_mTr h_yl
-  grind [LTS.mem_pairViaLang, LTS.Execution, → LTS.Execution.comp,
-    → LTS.Execution.of_mTr]
+  obtain ⟨l, r⟩ := h_eq s t
+  by_cases h_xl : xl ∈ na.pairViaLang na.accept s t
+  · obtain ⟨r, hr, xs₁, xs₂, h₁, h₂, rfl⟩ := LTS.mem_pairViaLang.mp (r.mp h_xl)
+    obtain ⟨sl₁, he₁⟩ := LTS.Execution.of_mTr h₁
+    obtain ⟨sl₂, he₂⟩ := LTS.Execution.of_mTr h₂
+    refine ⟨sl₁ ++ sl₂.tail, he₁.comp he₂, fun _ ↦ ⟨_, hr, ?_⟩⟩
+    grind [he₁.last]
+  · use LTS.Execution.of_mTr (l.mp hp) |>.choose
+    grind
 
 /-- `na.buchiFamily` is a family of ω-languages indexed by a pair of equivalence classes
 of `na.BuchiCongruence` which will turn out to saturate the ω-language accepted by `na`
@@ -115,7 +121,8 @@ This theorem uses the Ramsey theorem for infinite graphs and does not depend on 
 of `na.BuchiCongruence` other than that it is of finite index. -/
 theorem buchiFamily_cover [Inhabited Symbol] [Finite State] :
     ⨆ i, na.buchiFamily i = ⊤ := by
-  ext xs
+  apply mem_ext
+  intro xs
   have : Finite (Quotient na.BuchiCongruence.eq) := buchiCongruence_fin_index
   let color (t : Finset ℕ) : Quotient na.BuchiCongruence.eq :=
     if h : t.Nonempty then ⟦ xs.extract (t.min' h) (t.max' h) ⟧ else ⟦ [] ⟧
@@ -139,7 +146,7 @@ theorem buchiFamily_cover [Inhabited Symbol] [Finite State] :
       simp_all only [extract_drop, color]
       split_ifs with h
       · have : f k ≤ f (k + 1) := by lia
-        have : f 0 + (f k - f 0) = f k := by lia
+        have : f 0 + (f k - f 0) = f k := by grind
         have : f 0 + (f (k + 1) - f 0) = f (k + 1) := by lia
         simp_all
         rfl
@@ -153,75 +160,94 @@ private lemma frequently_via_accept [Inhabited Symbol]
     {xl : List Symbol} {xls : ωSequence (List Symbol)} {ss : ωSequence State}
     (h_acc : ∃ᶠ (k : ℕ) in atTop, ss k ∈ na.accept)
     (h_exec : na.OmegaExecution ss (xl ++ω xls.flatten))
-    (h_xls_p : ∀ (k : ℕ), (xls k).length > 0)
-    (f : ℕ → ℕ) (h_f : f = fun k => xl.length + xls.cumLen k)
-    (ts : ωSequence State) (h_ts : ts = ωSequence.mk (fun k ↦ ss (f k))) :
-    ∃ᶠ (k : ℕ) in atTop, xls k ∈ na.pairViaLang na.accept (ts k) (ts (k + 1)) := by
-  have hm : StrictMono f := by grind [StrictMono, cumLen_strictMono]
+    (h_xls_p : ∀ (k : ℕ), 0 < (xls k).length) :
+    ∃ᶠ (k : ℕ) in atTop, xls k ∈ na.pairViaLang na.accept
+      (ss (xl.length + xls.cumLen k)) (ss (xl.length + xls.cumLen (k + 1))) := by
+  have hm : StrictMono (xl.length + xls.cumLen ·) := by grind [StrictMono, cumLen_strictMono]
   apply Frequently.mono <| frequently_in_strictMono hm h_acc
   rintro n ⟨k, _, _⟩
   apply LTS.mem_pairViaLang.mpr
-  use ss (f n + k), by grind, (xls n).take k, (xls n).drop k
+  use ss (xl.length + xls.cumLen n + k), by grind, (xls n).take k, (xls n).drop k
   have := extract_flatten h_xls_p n
   have exec {m n} (h : m ≤ n) :=
     LTS.Execution.to_mTr <| LTS.OmegaExecution.extract_execution h_exec h
   split_ands
-  · have h : f n ≤ f n + k := by lia
+  · have h : xl.length + xls.cumLen n ≤ xl.length + xls.cumLen n + k := by lia
     specialize exec h
     grind [extract_append_right_right]
-  · have h : f n + k ≤ f (n + 1) := by lia
+  · have h : xl.length + xls.cumLen n + k ≤ xl.length + xls.cumLen (n + 1) := by lia
     specialize exec h
     grind [extract_append_right_right]
   · grind only [!List.take_append_drop]
 
 /-- `na.buchiFamily` saturates the ω-language accepted by `na`. -/
-theorem buchiFamily_saturation [Inhabited Symbol] : Saturates na.buchiFamily (language na) := by
-  rintro ⟨a, b⟩ ⟨xs, h_xs, h_lang⟩ ys h_ys
-  obtain ⟨xl, xls, h_xl_c, h_xls_c, rfl⟩ := mem_buchiFamily.mp h_xs
-  obtain ⟨yl, yls, h_yl_c, h_yls_c, rfl⟩ := mem_buchiFamily.mp h_ys
-  obtain ⟨ss, ⟨h_init, h_exec⟩, h_acc⟩ := h_lang
-  let f (k : ℕ) := xl.length + xls.cumLen k
-  let ts := ωSequence.mk (fun k ↦ ss (f k))
-  have h_xls_p (k : ℕ) : (xls k).length > 0 := by grind [Language.mem_sub_one]
+theorem buchiFamily_saturation [Inhabited Symbol] :
+    Saturates (fun i ↦ (na.buchiFamily i).toSet) (language na).toSet := by
+  -- first we introduce two ωSequences of symbols with the form `x := xl ++ω xls.flatten` and
+  -- `y := yl ++ω yls.flatten`, Buchi-congruent and such that `x` is accepted by `na` along the
+  -- state sequence `ss`.
+  simp_rw [Saturates, Set.inter_nonempty, Set.subset_def, ← ωLanguage.mem_def, forall_exists_index,
+    and_imp, Prod.forall, mem_buchiFamily, mem_sub_one, forall_and, List.ne_nil_iff_length_pos]
+  rintro _ _ _ ⟨xl, xls, h_xl_c, ⟨h_xls_c, h_xls_p⟩, rfl⟩ ⟨ss, ⟨h_init, h_exec⟩, h_acc⟩ _
+    ⟨yl, yls, h_yl_c, ⟨h_yls_c, h_yls_p⟩, rfl⟩
+  let ts := ωSequence.mk (fun k ↦ ss (xl.length + xls.cumLen k))
+  -- the head segment `xl` takes `na` from the start state to `ts 0`...
+  have h_xl_e : xl ∈ na.pairLang (ss 0) (ts 0) := by
+    rw [LTS.mem_pairLang]
+    convert! LTS.OmegaExecution.extract_mTr h_exec xl.length.zero_le using 1
+    simp [extract_append_zero_right]
+  -- ... and the segment `xls k` takes `na` from `ts k` to `ts (k + 1)`
   have h_xls_e (k : ℕ) : xls k ∈ na.pairLang (ts k) (ts (k + 1)) := by
-    grind [LTS.OmegaExecution.extract_mTr h_exec (?_ : f k ≤ f (k + 1)), LTS.mem_pairLang,
+    have : xl.length + xls.cumLen k < xl.length + xls.cumLen (k + 1) :=
+      Nat.add_lt_add_left (cumLen_strictMono h_xls_p k.lt_succ_self) xl.length
+    grind [LTS.OmegaExecution.extract_mTr h_exec this.le, LTS.mem_pairLang,
       extract_append_right_right, add_tsub_cancel_left]
-  have h_yls (k : ℕ) := buchiCongruence_transfer ((h_xls_c k).left) ((h_yls_c k).left) (h_xls_e k)
-  choose sls h_yls_e h_yls_a using h_yls
-  have h_yls_p (k : ℕ) : (yls k).length > 0 := by grind [Language.mem_sub_one]
-  obtain ⟨ss1, h_ss1_run, h_ss1_seg⟩ := LTS.OmegaExecution.flatten_execution h_yls_e h_yls_p
-  suffices ∃ᶠ (k : ℕ) in atTop, ss1 k ∈ na.accept by
-    have h_xl_e : xl ∈ na.pairLang (ss 0) (ts 0) := by
-      grind [LTS.OmegaExecution.extract_mTr h_exec (?_ : 0 ≤ xl.length),
-        extract_append_zero_right, LTS.mem_pairLang]
-    have h_yl_e : yl ∈ na.pairLang (ss 0) (ts 0) := by
-      grind [buchiCongruence_transfer h_xl_c h_yl_c h_xl_e, LTS.mem_pairLang, LTS.Execution.to_mTr]
-    have h_ss1_ts : ss1 0 = ts 0 := by
-      have h : 0 < yls.cumLen 1 - yls.cumLen 0 := by grind
-      have : 0 < (sls 0).length := by grind
-      have : ss1 0 = (sls 0)[0] := by grind [get_extract (xs := ss1) h]
-      have : (sls 0)[0] = ts 0 := h_yls_e 0 |>.choose_spec |>.1
-      grind
-    obtain ⟨ss2, _, _, _, _⟩ := LTS.OmegaExecution.append h_yl_e h_ss1_run h_ss1_ts
-    use ss2
-    have := @drop_frequently_iff_frequently _ ss2 na.accept yl.length
-    grind [Run.mk]
-  apply frequently_atTop.mpr
+  -- for each such segment we choose a similar state sequence `sls k` for `y`.
+  obtain ⟨sl, h_yl_e, _⟩ := buchiCongruence_transfer h_xl_c h_yl_c h_xl_e
+  choose sls h_yls_e h_yls_a using
+    fun k ↦ buchiCongruence_transfer (h_xls_c k) (h_yls_c k) (h_xls_e k)
+  obtain ⟨sls, rfl⟩ : ∃ sls' : ωSequence (List State), (sls' : ℕ → List State) = sls := ⟨⟨sls⟩, rfl⟩
+  -- our witness for `y` will be the sequence gluing `sl` and `sls` along their common start and
+  -- endpoints: `sl ++ω (ωSequence.map List.dropLast sls).flatten.tail`. Auxilliary results:
+  -- all the lengths agree
+  have h_sls_drop_l (k : ℕ) : (ωSequence.map List.dropLast sls k).length = (yls k).length := by
+    simp [List.length_dropLast, (h_yls_e k).length]
+  have h_sls_drop_p (k : ℕ) : 0 < (ωSequence.map List.dropLast sls k).length :=
+    h_sls_drop_l k ▸ h_yls_p k
+  have h_sls_cl : (ωSequence.map List.dropLast sls).cumLen = yls.cumLen := by
+    ext k; induction k <;> grind
+  have : Inhabited State := ⟨ss 0⟩
+  -- the initial state of the tail part is correct
+  have h_fst : (ωSequence.map List.dropLast sls).flatten 0 = ts 0 := by
+    have := flatten_get_add _ (h_sls_drop_p 0) h_sls_drop_p
+    simp_rw [cumLen_zero, add_zero, get_map, List.getElem_dropLast] at this
+    rw [this, (h_yls_e 0).start]
+  -- use our witness: the start state is `ss 0 ∈ na.start` by `h_init`, and we can join the
+  -- head and tail executions (for `yl` and `yls`) using `OmegaExecution.prepend_execution`.
+  refine ⟨sl ++ω (ωSequence.map List.dropLast sls).flatten.tail,
+    ⟨by rwa [get_append_left _ _ _ h_yl_e.length_ss_pos, h_yl_e.start],
+    (LTS.OmegaExecution.flatten_execution' h_yls_e h_yls_p).prepend_execution h_yl_e h_fst⟩, ?_⟩
+  -- it remains to show the witness satisfies the acceptance condition
+  rw [frequently_atTop]
   intro n
-  obtain ⟨m, _, s, _, h_mem⟩ :=
-    frequently_atTop.mp ((frequently_via_accept h_acc h_exec h_xls_p f rfl ts rfl).mono h_yls_a) n
-  obtain ⟨k, _, _⟩ := List.mem_iff_getElem.mp h_mem
-  use yls.cumLen m + k
-  suffices ss1 (yls.cumLen m + k) = (sls m)[k] by
-    have h_mono := cumLen_strictMono h_yls_p
-    have := StrictMono.add_le_nat h_mono m 0
-    lia
-  obtain ⟨_, _, _, _⟩ := h_yls_e m
-  obtain ⟨_, _, _, _⟩ := h_yls_e (m + 1)
-  grind =>
-   have := @get_extract (xs := ss1)
-   have : k < (yls m).length ∨ ¬ k < (yls m).length
-   have : k < yls.cumLen (m + 1) - yls.cumLen m ∨ 0 < yls.cumLen (m + 2) - yls.cumLen (m + 1)
-   finish
+  -- use the auxilliary lemma `frequently_via_accept` to transfer extract a witness for the
+  -- acceptance of `x`
+  obtain ⟨m, _, s, h_acc, h_mem⟩ :=
+    frequently_atTop.mp ((frequently_via_accept h_acc h_exec h_xls_p).mono h_yls_a) n
+  obtain ⟨k, hklen, rfl⟩ := List.mem_iff_getElem.mp h_mem
+  rw [← sl.dropLast_append_getLast h_yl_e.ss_ne_nil, append_append_ωSequence,
+    singleton_append_ωSequence, h_yl_e.getLast, ← h_fst, cons_head_tail]
+  -- up to some messing around with indices, we use the same witness for `y`
+  refine ⟨sl.dropLast.length + yls.cumLen m + k,
+    by lia [(cumLen_strictMono h_yls_p).add_le_nat m 0],
+    mem_of_eq_of_mem ?_ h_acc⟩
+  rw [add_assoc, get_append_right]
+  obtain (hk | rfl) : k < (yls m).length ∨ k = (yls m).length := by
+    rwa [(h_yls_e m).length, k.lt_succ_iff, k.le_iff_lt_or_eq] at hklen
+  · simp [← (sls m).getElem_dropLast (h_sls_drop_l m ▸ hk), ← h_sls_cl,
+      flatten_get_add _ (h_sls_drop_l m ▸ hk) h_sls_drop_p]
+  · rw [(h_yls_e m).last', ← cumLen_succ, ← (h_yls_e (m + 1)).start, ← h_sls_cl]
+    convert! (sls.map List.dropLast).flatten_get_add (h_sls_drop_p (m + 1)) h_sls_drop_p using 1
+    simp
 
 end Cslib.Automata.NA.Buchi

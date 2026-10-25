@@ -9,11 +9,11 @@ module
 public import Cslib.Foundations.Data.OmegaSequence.Init
 public import Mathlib.Order.Filter.AtTopBot.Basic
 
-@[expose] public section
-
 /-!
 # Temporal reasoning over infinite sequences.
 -/
+
+@[expose] public section
 
 open Function Set Filter
 
@@ -49,10 +49,11 @@ variable {xs : ωSequence α}
 theorem step_leadsTo {p q : Set α} (h : xs.Step p q) : xs.LeadsTo p q := by
   grind
 
+set_option linter.tacticAnalysis.verifyGrindOnly false in
 /-- `LeadsTo` is transitive. -/
 theorem leadsTo_trans {p q r : Set α}
     (h1 : xs.LeadsTo p q) (h2 : xs.LeadsTo q r) : xs.LeadsTo p r := by
-  grind
+  grind only [LeadsTo]
 
 /-- If `p ∩ q` leads to `r` and `p ∩ qᶜ` leads to `s`, then `p` leads to `r ∪ s`. -/
 theorem leadsTo_cases_or {p q r s : Set α}
@@ -93,13 +94,7 @@ theorem frequently_leadsTo_frequently {p q : Set α}
 
 theorem drop_frequently_iff_frequently {p : Set α} (n : ℕ) :
     (∃ᶠ k in atTop, (xs.drop n) k ∈ p) ↔ (∃ᶠ k in atTop, xs k ∈ p) := by
-  simp only [frequently_atTop, get_drop]
-  constructor
-  · intro h m
-    grind [h m]
-  · intro h m
-    obtain ⟨k, _⟩ := h (m + n)
-    use k - n
-    grind
+  conv_rhs => rw [← map_add_atTop_eq_nat n, frequently_map]
+  simp only [get_drop, Nat.add_comm]
 
 end Cslib.ωSequence

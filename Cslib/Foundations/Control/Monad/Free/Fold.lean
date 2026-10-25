@@ -8,8 +8,6 @@ module
 
 public import Cslib.Foundations.Control.Monad.Free
 
-@[expose] public section
-
 /-!
 # Free Monad Catamorphism
 
@@ -40,12 +38,14 @@ For any such algebra, `foldFreeM onValue onEffect` is the unique algebra morphis
 from the initial algebra `FreeM F α` to `(β, onValue, onEffect)`.
 -/
 
+@[expose] public section
+
 namespace Cslib
 
-universe u v w w'
+universe u v w w' w''
 
 namespace FreeM
-variable {F : Type u → Type v} {ι : Type u} {α : Type w} {β : Type w'}
+variable {F : Type u → Type v} {ι : Type u} {α : Type w} {β : Type w'} {γ : Type w''}
 
 /-- Fold function for the `FreeM` monad -/
 def foldFreeM
@@ -59,20 +59,36 @@ def foldFreeM
 theorem foldFreeM_pure
     (onValue : α → β)
     (onEffect : {ι : Type u} → F ι → (ι → β) → β)
-    (a : α) : foldFreeM onValue onEffect (.pure a) = onValue a := rfl
+    (a : α) : foldFreeM onValue onEffect (pure a) = onValue a := rfl
 
 @[simp]
-theorem foldFreeM_liftBind
+theorem foldFreeM_lift_bind
     (onValue : α → β)
     (onEffect : {ι : Type u} → F ι → (ι → β) → β)
     (op : F ι) (k : ι → FreeM F α) :
-    foldFreeM onValue onEffect (.liftBind op k)
+      foldFreeM onValue onEffect ((lift op).bind k)
       = onEffect op (fun x => foldFreeM onValue onEffect (k x)) := rfl
+
+@[simp]
+theorem foldFreeM_lift_bind' {F : Type w → Type v} {ι : Type w}
+    (onValue : α → β)
+    (onEffect : {ι : Type w} → F ι → (ι → β) → β)
+    (op : F ι) (k : ι → FreeM F α) :
+      foldFreeM onValue onEffect (lift op >>= k)
+      = onEffect op (fun x => foldFreeM onValue onEffect (k x)) := rfl
+
+@[simp]
+theorem foldFreeM_lift
+    (onValue : ι → β)
+    (onEffect : {ι : Type u} → F ι → (ι → β) → β)
+    (op : F ι) :
+    foldFreeM onValue onEffect (lift op) = onEffect op onValue :=
+  rfl
 
 /--
 **Universal Property**: If `h : FreeM F α → β` satisfies:
-* `h (.pure a) = onValue a`
-* `h (.liftBind op k) = onEffect op (fun x => h (k x))`
+* `h (pure a) = onValue a`
+* `h ((lift op).bind k) = onEffect op (fun x => h (k x))`
 
 then `h` is equal to `foldFreeM onValue onEffect`.
 -/
@@ -80,17 +96,39 @@ theorem foldFreeM_unique
     (onValue : α → β)
     (onEffect : {ι : Type u} → F ι → (ι → β) → β)
     (h : FreeM F α → β)
-    (h_pure : ∀ a, h (.pure a) = onValue a)
+    (h_pure : ∀ a, h (pure a) = onValue a)
     (h_liftBind : ∀ {ι} (op : F ι) (k : ι → FreeM F α),
-      h (.liftBind op k) = onEffect op (fun x => h (k x))) :
+      h ((lift op).bind k) = onEffect op (fun x => h (k x))) :
     h = foldFreeM onValue onEffect := by
   funext x
   induction x with
   | pure a =>
     rw [foldFreeM_pure, h_pure]
-  | liftBind op k ih =>
-    rw [foldFreeM_liftBind, h_liftBind]
+  | lift_bind op k ih =>
+    rw [foldFreeM_lift_bind, h_liftBind]
     grind
+
+/-- Sequencing substitutes the fold of the continuation for the value handler. -/
+theorem foldFreeM_bind (onValue : β → γ)
+    (onEffect : {ι : Type u} → F ι → (ι → γ) → γ)
+    (x : FreeM F α) (k : α → FreeM F β) :
+    foldFreeM onValue onEffect (x.bind k) =
+      foldFreeM (fun a => foldFreeM onValue onEffect (k a)) onEffect x := by
+  induction x with
+  | pure a => rfl
+  | lift_bind op cont ih => exact congrArg (onEffect op) (funext ih)
+
+theorem foldFreeM_map (onValue : β → γ)
+    (onEffect : {ι : Type u} → F ι → (ι → γ) → γ) (f : α → β) (x : FreeM F α) :
+    foldFreeM onValue onEffect (map f x) = foldFreeM (onValue ∘ f) onEffect x := by
+  rw [← bind_pure_comp, foldFreeM_bind]
+  rfl
+
+/-- Monadic interpretation is the fold whose effect handler uses `bind`. -/
+theorem liftM_eq_foldFreeM {m : Type u → Type w} [Monad m] {α : Type u}
+    (interp : {ι : Type u} → F ι → m ι) :
+    FreeM.liftM interp (α := α) = foldFreeM pure (fun op k => interp op >>= k) :=
+  foldFreeM_unique _ _ _ (liftM_pure interp) (fun _ _ => rfl)
 
 end FreeM
 

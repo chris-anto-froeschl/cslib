@@ -8,9 +8,9 @@ module
 
 public import Cslib.Computability.Automata.NA.Basic
 
-@[expose] public section
-
 /-! # Product of nondeterministic automata. -/
+
+@[expose] public section
 
 namespace Cslib.Automata.NA
 
@@ -31,16 +31,10 @@ and vice versa. -/
 theorem iProd_run_iff {na : (i : I) → NA (State i) Symbol}
     {xs : ωSequence Symbol} {ss : ωSequence (Π i, State i)} :
     (iProd na).Run xs ss ↔ ∀ i, (na i).Run xs (ss.map (· i)) := by
-  rw [iProd]
   constructor
-  · rintro ⟨h_start, h_trans⟩
-    simp only [mem_iInter] at h_start
-    grind [Run]
+  · intro h i
+    exact ⟨mem_iInter.mp h.start i, fun n => h.trans n i⟩
   · intro h
-    constructor
-    · simp only [mem_iInter]
-      grind [Run]
-    · intro n i
-      exact (h i).trans n
+    exact ⟨mem_iInter.mpr fun i => (h i).start, fun n i => (h i).trans n⟩
 
 end Cslib.Automata.NA

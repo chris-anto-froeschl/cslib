@@ -9,8 +9,6 @@ module
 public import Cslib.Foundations.Semantics.FLTS.Basic
 public import Cslib.Foundations.Semantics.LTS.OmegaExecution
 
-@[expose] public section
-
 /-!
 # Total LTS
 
@@ -18,9 +16,11 @@ This file defines, and proves some theorems about, the notion of an LTS being "t
 and a "totalize" construction that converts any LTS into a total LTS.
 -/
 
+@[expose] public section
+
 namespace Cslib.LTS
 
-open ωSequence Sum
+open ωSequence
 
 variable {State Label : Type*} {lts : LTS State Label}
 
@@ -62,51 +62,44 @@ theorem Total.extend_omegaExecution [Inhabited Label] [ht : lts.Total]
   grind [OmegaExecution.append hm ho h0]
 
 /-- `totalize` constructs a total LTS from any given LTS by adding a sink state. -/
-def totalize (lts : LTS State Label) : LTS (State ⊕ Unit) Label where
+def totalize (lts : LTS State Label) : LTS (Option State) Label where
   Tr s' μ t' := match s', t' with
-    | Sum.inl s, Sum.inl t => lts.Tr s μ t
-    | _, Sum.inr () => True
-    | Sum.inr (), Sum.inl _ => False
+    | some s, some t => lts.Tr s μ t
+    | _, none => True
+    | none, some _ => False
 
 /-- The LTS constructed by `totalize` is indeed total. -/
 instance (lts : LTS State Label) : lts.totalize.Total where
-  total _ _ := by simp [totalize]
+  total _ _ := by
+    use none
+    simp [totalize]
 
 /-- In `totalize`, there is no finite execution from the sink state to any non-sink state. -/
 theorem totalize.no_sink_to_nonsink {μs : List Label} {t : State} :
-    ¬ lts.totalize.MTr (Sum.inr ()) μs (Sum.inl t) := by
-  intro h
-  generalize h_s : (Sum.inr () : State ⊕ Unit) = s'
-  generalize h_t : (Sum.inl t : State ⊕ Unit) = t'
-  rw [h_s, h_t] at h
-  induction h <;> grind [totalize]
+    ¬ lts.totalize.MTr (none) μs (some t) := by
+  induction μs with
+  | nil => simp
+  | cons μ μs ih =>
+    simp only [MTr.cons_iff]
+    rintro ⟨_ | s, htr, hmtr⟩
+    · exact ih hmtr
+    · exact htr
 
 /-- In `totalize`, the transitions between non-sink states correspond exactly to
 the transitions in the original LTS. -/
 @[simp]
 theorem totalize.nonsink_tr_iff {μ : Label} {s t : State} :
-    lts.totalize.Tr (Sum.inl s) μ (Sum.inl t) ↔ lts.Tr s μ t := by
+    lts.totalize.Tr (some s) μ (some t) ↔ lts.Tr s μ t := by
   simp [totalize]
 
 /-- In `totalize`, the multistep transitions between non-sink states correspond exactly to
 the multistep transitions in the original LTS. -/
 @[simp]
 theorem totalize.nonsink_mtr_iff {μs : List Label} {s t : State} :
-    lts.totalize.MTr (Sum.inl s) μs (Sum.inl t) ↔ lts.MTr s μs t := by
-  constructor <;> intro h
-  · generalize h_s : (Sum.inl s : State ⊕ Unit) = s'
-    generalize h_t : (Sum.inl t : State ⊕ Unit) = t'
-    rw [h_s, h_t] at h
-    induction h generalizing s
-    case refl _ => grind [MTr]
-    case stepL t1' μ t2' μs t3' h_tr h_mtr h_ind =>
-      obtain ⟨rfl⟩ := h_s
-      cases t2'
-      case inl t2 => grind [MTr, totalize.nonsink_tr_iff.mp h_tr]
-      case inr t2 => grind [totalize.no_sink_to_nonsink]
-  · induction h
-    case refl _ => grind [MTr]
-    case stepL t1 μ t2 μs t3 h_tr h_mtr h_ind =>
-      grind [MTr, totalize.nonsink_tr_iff.mpr h_tr]
+    lts.totalize.MTr (some s) μs (some t) ↔ lts.MTr s μs t := by
+  induction μs generalizing s with
+  | nil => simp
+  | cons μ μs ih =>
+    simp [MTr.cons_iff, Option.exists, no_sink_to_nonsink, ih]
 
 end Cslib.LTS

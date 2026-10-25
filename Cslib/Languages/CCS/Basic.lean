@@ -10,8 +10,6 @@ public import Cslib.Foundations.Syntax.Context
 public import Mathlib.Tactic.ToAdditive
 public import Mathlib.Tactic.ToDual
 
-@[expose] public section
-
 /-! # Calculus of Communicating Systems (CCS)
 
 CCS [Milner80], as presented in [Sangiorgi2011]. In the semantics (see `CCS.lts`), we adopt the
@@ -31,6 +29,8 @@ option of constant definitions (K = P).
 * [D. Sangiorgi, *Introduction to Bisimulation and Coinduction*][Sangiorgi2011]
 -/
 
+@[expose] public section
+
 namespace Cslib.CCS
 
 universe u v
@@ -44,13 +44,59 @@ deriving DecidableEq
 
 /-- Processes. -/
 inductive Process (Name : Type u) (Constant : Type v) : Type (max u v) where
+  /-- Terminated process. -/
   | nil
+  /-- Do `μ` and proceed as `p`. -/
   | pre (μ : Act Name) (p : Process Name Constant)
+  /-- `p` parallel `q`. -/
   | par (p q : Process Name Constant)
+  /-- Do `p` or `q` (nondeterministically). -/
   | choice (p q : Process Name Constant)
+  /-- Restriction. -/
   | res (a : Name) (p : Process Name Constant)
+  /-- Constant. -/
   | const (c : Constant)
 deriving DecidableEq
+
+/-- Syntactic category for processes. -/
+declare_syntax_cat ccsProc
+
+@[inherit_doc Process.nil]
+scoped syntax num : ccsProc
+
+@[inherit_doc Process.pre]
+scoped syntax ident "." ccsProc : ccsProc
+
+@[inherit_doc Process.pre]
+scoped syntax "(" term ")" "." ccsProc : ccsProc
+
+@[inherit_doc Process.choice]
+scoped syntax ccsProc "+" ccsProc : ccsProc
+
+@[inherit_doc Process.par]
+scoped syntax ccsProc "|" ccsProc : ccsProc
+
+@[inherit_doc Process.res]
+scoped syntax "ν" term ccsProc : ccsProc
+
+@[inherit_doc Process.const]
+scoped syntax "const" term : ccsProc
+
+@[inherit_doc Process]
+scoped syntax "(" ccsProc ")" : ccsProc
+
+@[inherit_doc Process]
+scoped syntax "`(CCS| " ccsProc ")" : term
+
+scoped macro_rules
+  | `(`(CCS| 0)) => `(Process.nil)
+  | `(`(CCS| $μ:ident . $p:ccsProc)) => `(Process.pre $μ `(CCS| $p))
+  | `(`(CCS| ( $μ:term ) . $p:ccsProc)) => `(Process.pre $μ `(CCS| $p))
+  | `(`(CCS| $p:ccsProc + $q:ccsProc)) => `(Process.choice `(CCS| $p) `(CCS| $q))
+  | `(`(CCS| $p:ccsProc | $q:ccsProc)) => `(Process.par `(CCS| $p) `(CCS| $q))
+  | `(`(CCS| ν $a:term $p:ccsProc)) => `(Process.res $a `(CCS| $p))
+  | `(`(CCS| const $c:term)) => `(Process.const $c)
+  | `(`(CCS| ( $p:ccsProc ))) => `(`(CCS| $p))
 
 namespace Act
 
@@ -87,7 +133,7 @@ def isCo [DecidableEq Name] (μ μ' : Act Name) : Bool :=
   | _, _ => false
 
 theorem isCo_iff [DecidableEq Name] {μ μ' : Act Name} : isCo μ μ' ↔ Co μ μ' := by
-  grind [cases Act]
+  cases μ <;> cases μ' <;> grind
 
 /-- `Act.Co` is decidable if `Name` equality is decidable. -/
 instance [DecidableEq Name] {μ μ' : Act Name} : Decidable (Co μ μ') :=
@@ -119,7 +165,7 @@ def Context.fill (c : Context Name Constant) (p : Process Name Constant) : Proce
   | choiceR r c => Process.choice r (c.fill p)
   | res a c => Process.res a (c.fill p)
 
-instance : HasContext (Process Name Constant) := ⟨Context Name Constant, Context.fill⟩
+instance : HasContext (Process Name Constant) := ⟨Context.fill⟩
 
 /-- Definition of context filling. -/
 @[scoped grind =]
@@ -151,7 +197,7 @@ theorem Context.complete (p : Process Name Constant) :
     obtain ⟨c, hc⟩ := ih
     exists res a c
     grind
-  case const k =>
+  case «const» k =>
     exists hole
     grind
 

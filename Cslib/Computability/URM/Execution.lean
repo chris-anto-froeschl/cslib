@@ -6,7 +6,7 @@ Authors: Jesse Alama
 module
 
 public import Cslib.Computability.URM.Defs
-public import Cslib.Foundations.Data.Relation
+public import Cslib.Foundations.Relation.Confluence
 public import Mathlib.Data.Part
 
 /-! # URM Execution Semantics
@@ -82,8 +82,9 @@ namespace Step
 
 variable {p : Program}
 
+set_option linter.tacticAnalysis.verifyGrindOnly false in
 /-- The step relation is deterministic: each state has at most one successor. -/
-theorem deterministic : Relator.RightUnique (Step p) := by grind [Relator.RightUnique]
+theorem deterministic : Relator.RightUnique (Step p) := by grind only [Relator.RightUnique]
 
 /-- A halted state has no successor in the step relation. -/
 theorem no_step_of_halted {s s' : State} (hhalted : s.isHalted p) : ¬Step p s s' := by
@@ -132,7 +133,7 @@ theorem isHalted_iff_normal {p : Program} {s : State} :
 
 /-- The step relation is confluent. -/
 theorem step_confluent (p : Program) : Relation.Confluent (Step p) := by
-  apply Relation.RightUnique.toConfluent
+  apply Relation.RightUnique.to_confluent
   exact Step.deterministic
 
 namespace Steps
@@ -146,7 +147,7 @@ theorem preserves_register {s s' : State} {r : ℕ}
     s'.regs.read r = s.regs.read r := by
   induction hsteps using Relation.ReflTransGen.head_induction_on with
   | refl => rfl
-  | head => grind [Step.preserves_register]
+  | head hstep => grind [Step.preserves_register hstep (r := r)]
 
 /-- If two halted states are reachable from the same start, they are equal.
 

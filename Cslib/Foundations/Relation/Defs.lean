@@ -1,0 +1,190 @@
+/-
+Copyright (c) 2025 Fabrizio Montesi and Thomas Waring. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Fabrizio Montesi, Thomas Waring, Chris Henson
+-/
+
+module
+
+public import Cslib.Init
+public import Mathlib.Data.Set.CoeSort
+public import Mathlib.Logic.Relation
+
+/-! # Relations: Definitions
+
+## References
+
+* [*Term Rewriting and All That*][Baader1998]
+* [*Simple Laws about Nonprominent Properties of Binary Relations*][Burghardt2018]
+* [*Applied Combinatorics*][KellerTrotter2017]
+-/
+
+@[expose] public section
+
+namespace Relation
+
+/-! ### Operations on relations -/
+
+/-- The empty (heterogeneous) relation, which always returns `False`. -/
+@[nolint unusedArguments]
+def emptyHRelation {α : Sort u} {β : Sort v} (_ : α) (_ : β) := False
+
+/-- Domain of a relation. -/
+def dom (r : α → β → Prop) : Set α := {a | ∃ b, r a b}
+
+/-- Codomain of a relation, aka range. -/
+def cod (r : α → β → Prop) : Set β := {b | ∃ a, r a b}
+
+/-- Generalisation of `Join` to two relations. -/
+def Join₂ (r₁ r₂ : α → α → Prop) (a b : α) : Prop := ∃ c, r₁ a c ∧ r₂ b c
+
+/-- The join of the reflexive transitive closure. This is not named in Mathlib, but see
+  `#loogle Relation.Join (Relation.ReflTransGen ?r)` -/
+@[deprecated "use `Join (ReflTrasnGen ·)` instead" (since := "2026-09-12")]
+abbrev MJoin (r : α → α → Prop) := Join (ReflTransGen r)
+
+/-- The relation `r` 'up to' the relation `s`. -/
+def UpTo (r s : α → α → Prop) : α → α → Prop := Comp s (Comp r s)
+
+/-- Relation `r` preserves predicate `P`. -/
+def Preserves (r : α → α → Prop) (P : α → Prop) : Prop := ∀ ⦃a b⦄, r a b → P a → P b
+
+/-! ### Confluence and commutation properties -/
+
+/-- A relation has the diamond property when all reductions with a common origin are joinable -/
+abbrev Diamond (r : α → α → Prop) := ∀ {a b c : α}, r a b → r a c → Join r b c
+
+/-- Generalization of `Diamond` to two relations. -/
+abbrev DiamondCommute (r₁ r₂ : α → α → Prop) :=
+  ∀ {x y₁ y₂}, r₁ x y₁ → r₂ x y₂ → Join₂ r₂ r₁ y₁ y₂
+
+/-- A relation is confluent when its reflexive transitive closure has the diamond property. -/
+abbrev Confluent (r : α → α → Prop) := Diamond (ReflTransGen r)
+
+/-- Generalization of `Confluent` to two relations. -/
+abbrev Commute (r₁ r₂ : α → α → Prop) := DiamondCommute (ReflTransGen r₁) (ReflTransGen r₂)
+
+/-- A relation is semi-confluent when single and multiple steps with common origin
+  are multi-joinable. -/
+abbrev SemiConfluent (r : α → α → Prop) :=
+  ∀ {x y₁ y₂}, r x y₁ → ReflTransGen r x y₂ → Join (ReflTransGen r) y₁ y₂
+
+/-- Generalisation of `SemiConfluent` to two relations. -/
+abbrev SemiCommute (r₁ r₂ : α → α → Prop) :=
+  ∀ {x y₁ y₂}, r₁ x y₁ → ReflTransGen r₂ x y₂ → Join₂ (ReflTransGen r₂) (ReflTransGen r₁) y₁ y₂
+
+/-- A relation has the Church Rosser property when equivalence implies multi-joinability. -/
+abbrev ChurchRosser (r : α → α → Prop) := ∀ {x y}, EqvGen r x y → Join (ReflTransGen r) x y
+
+/-- A relation is locally confluent when all reductions with a common origin are multi-joinable -/
+abbrev LocallyConfluent (r : α → α → Prop) :=
+  ∀ {a b c : α}, r a b → r a c → Join (ReflTransGen r) b c
+
+/-- Generalization of `LocallyConfluent` to two relations. -/
+def LocallyCommute (r₁ r₂ : α → α → Prop) :=
+  ∀ {a b c : α}, r₁ a b → r₂ a c → Join₂ (ReflTransGen r₂) (ReflTransGen r₁) b c
+
+/-- A relation is strongly confluent when single steps are reflexive- and multi-joinable. -/
+abbrev StronglyConfluent (r : α → α → Prop) :=
+  ∀ {x y₁ y₂}, r x y₁ → r x y₂ → ∃ z, ReflGen r y₁ z ∧ ReflTransGen r y₂ z
+
+/-- Generalization of `StronglyConfluent` to two relations. -/
+def StronglyCommute (r₁ r₂ : α → α → Prop) :=
+  ∀ {x y₁ y₂}, r₁ x y₁ → r₂ x y₂ → ∃ z, ReflGen r₂ y₁ z ∧ ReflTransGen r₁ y₂ z
+
+/-! ### Normalization properties -/
+
+/-- An element is reducible with respect to a relation if there is a value it is related to. -/
+abbrev Reducible (r : α → α → Prop) (x : α) : Prop := ∃ y, r x y
+
+/-- An element is normal if it is not reducible. -/
+abbrev Normal (r : α → α → Prop) (x : α) : Prop := ¬ Reducible r x
+
+/-- An element is normalizable if it is related to a normal element. -/
+abbrev Normalizable (r : α → α → Prop) (x : α) : Prop :=
+  ∃ n, ReflTransGen r x n ∧ Normal r n
+
+/-- A relation is normalizing when every element is normalizable. -/
+abbrev Normalizing (r : α → α → Prop) : Prop :=
+  ∀ x, Normalizable r x
+
+/-- An element `x` is `SN` (for strongly-normalising) for a relation `r` if it is accessible under
+the inverse of `r`. -/
+abbrev SN (r : α → α → Prop) := Acc (fun a b => r b a)
+
+/-- A relation is terminating when the inverse of its transitive closure is well-founded.
+  Note that this is also called Noetherian or strongly normalizing in the literature. -/
+abbrev Terminating (r : α → α → Prop) := WellFounded (fun a b => r b a)
+
+/-- A relation is acyclic if its transitive closure is irreflexive, equivalently if it admits no
+nonempty cycle. -/
+abbrev Acyclic (r : α → α → Prop) := Std.Irrefl (TransGen r)
+
+/-- A relation is convergent when it is both confluent and terminating. -/
+abbrev Convergent (r : α → α → Prop) := Confluent r ∧ Terminating r
+
+/-! ### Modal properties -/
+
+/-- A relation `r` is (right) Euclidean if `r a b` and `r a c` guarantee `r b c`. -/
+class RightEuclidean (r : α → α → Prop) where
+  rightEuclidean : r a b → r a c → r b c
+
+/-- A relation `r` is (left) Euclidean if `r a c` and `r b c` guarantee `r a b`. -/
+class LeftEuclidean (r : α → α → Prop) where
+  leftEuclidean {a b c} : r a c → r b c → r a b
+
+/-- A relation `r` is serial if every element is `Reducible`, i.e. `Relator.LeftTotal`. -/
+class Serial (r : α → α → Prop) where
+  serial : Relator.LeftTotal r
+
+/-! ### Relations and sets in the underlying types -/
+
+/-- The set of successors of an element `a` in a relation `r`. -/
+abbrev successors (r : α → β → Prop) (a : α) : Set β := {b | r a b}
+
+/-- The set of predecessors of an element `b` in a relation `r`. -/
+abbrev predecessors (r : α → β → Prop) (b : β) : Set α := {a | r a b}
+
+/-- The restriction of a relation `r` to a set `s`. -/
+def restrict (r : α → α → Prop) (s : Set α) : α → α → Prop :=
+  fun a b ↦ a ∈ s ∧ b ∈ s ∧ r a b
+
+/-! ### Interval order -/
+
+/-- Fishburn's theorem (see sections 6.6 and 6.7 of [KellerTrotter2017]) shows that
+the definition below is a sufficient and necessary condition for a relation `r` to have
+a representation by closed intervals on the real line such that `r i1 i2` iff the right
+endpoint of `i1` is less than the left endpoint of `i2`. -/
+def IsIntervalOrder (r : α → α → Prop) : Prop :=
+  IsStrictOrder α r ∧
+  ∀ a1 b1 a2 b2, r a1 b1 ∧ r a2 b2 → r a1 b2 ∨ r a2 b1
+
+end Relation
+
+/-! ### Properties of relations on restrictions of their (co)domain -/
+
+namespace Set
+
+open Relation
+
+@[nolint defsWithUnderscore]
+instance (r : α → α → Prop) (s : Set α) : CoeDep (α → α → Prop) r (s → s → Prop) where
+  coe a b := r a b
+
+/-- `ReflOn s r` is true when a relation `r` is reflexive on its restriction to a set `s`. -/
+def ReflOn (s : Set α) (r : α → α → Prop) : Prop :=
+  ∀ a ∈ s, r a a
+
+-- these names are used in the literature, so we provide them as `abbrev`
+
+/-- `LeftQuasiRefl r` is true when a relation `r` is reflexive on its domain. -/
+abbrev LeftQuasiRefl (r : α → α → Prop) := (dom r).ReflOn r
+
+/-- `RightQuasiRefl r` is true when a relation `r` is reflexive on its codomain. -/
+abbrev RightQuasiRefl (r : α → α → Prop) := (cod r).ReflOn r
+
+/-- `SymmOn s r` is true when a relation `r` is symmetric on its restriction to a set `s`. -/
+def SymmOn (s : Set α) (r : α → α → Prop) : Prop :=
+  ∀ a ∈ s, ∀ b ∈ s, r a b → r b a
+
+end Set
