@@ -58,12 +58,13 @@ variable {Var : Type u} [DecidableEq Var] [HasFresh Var]
 
 namespace LambdaCalculus.Named.Untyped
 
-/-- `Term.AlphaEquiv` α-equivalence packaged as a `Setoid`. -/
+/-- α-equivalence as a `Setoid`: two raw terms are identified when they differ only in the names
+of their bound variables. -/
 def Term.alphaSetoid (Var : Type u) [DecidableEq Var] [HasFresh Var] : Setoid (Term Var) where
   r := Term.AlphaEquiv
   iseqv := ⟨Term.AlphaEquiv.refl, Term.AlphaEquiv.symm, Term.AlphaEquiv.trans⟩
 
-/-- `Λα`: the α-quotient of the raw syntax `Λvar` (paper, Section 2.1). -/
+/-- `Λα` (Section 2.1 [Norrish2007a]): raw terms up to α-equivalence. -/
 def TermAlpha (Var : Type u) [DecidableEq Var] [HasFresh Var] : Type u :=
   Quotient (Term.alphaSetoid Var)
 
@@ -85,12 +86,13 @@ def var (x : Var) : TermAlpha Var := ⟦Term.var x⟧α
 def app : TermAlpha Var → TermAlpha Var → TermAlpha Var :=
   Quotient.map₂ Term.app (fun _ _ h₁ _ _ h₂ => Term.AlphaEquiv.app h₁ h₂)
 
-/-- Abstraction in `Λα`, lifted from `Λvar`.  This operation is *not* injective. -/
+/-- Abstraction in `Λα`, lifted from `Λvar`. This operation is *not* injective. -/
 def abs (x : Var) : TermAlpha Var → TermAlpha Var :=
   Quotient.map (Term.abs x) (fun _ _ h => Term.AlphaEquiv.abs_congr h)
 
-/-- Capture-avoiding substitution on `Λα` (Table 1: for `λNα`, substitution has type
-`Λα × V × Λα → Λα`).  Well defined by `Term.subst.preserve_AlphaEquiv`. -/
+/-- Capture-avoiding substitution on `Λα`, of type `Λα × V × Λα → Λα` as in Table 1
+[Norrish2007a]. Well defined because substitution respects α-equivalence
+(`Term.subst.preserve_AlphaEquiv`). -/
 def subst (M : TermAlpha Var) (x : Var) (N : TermAlpha Var) : TermAlpha Var :=
   Quotient.map₂ (fun m n => m[x := n])
     (fun _ _ h₁ _ _ h₂ => Term.subst.preserve_AlphaEquiv h₁ h₂) M N
@@ -111,9 +113,9 @@ lemma subst_mk (m n : Term Var) (x : Var) :
 
 end TermAlpha
 
-/-- β-reduction of `λNα` (paper, Table 1), on the α-quotiented type. The paper takes its rules
-as known; these are the usual ones, as in HOL's `compat_closure beta`. Its de Bruijn counterpart
-is Definition 7 (`DBeta'`), and Theorem 12 says that `f` maps one onto the other. -/
+/-- β-reduction of `λNα` (Table 1 [Norrish2007a]), on the α-quotiented type. The paper takes
+its rules as known; these are the usual ones, as in HOL's `compat_closure beta`. Its de Bruijn
+counterpart is Definition 7 (`DBeta'`), and Theorem 12 says that `f` maps one onto the other. -/
 inductive BetaAlpha : TermAlpha Var → TermAlpha Var → Prop where
   /-- Contraction of a β-redex. -/
   | red (x : Var) (M N : TermAlpha Var) :
@@ -130,7 +132,7 @@ inductive BetaAlpha : TermAlpha Var → TermAlpha Var → Prop where
 
 @[inherit_doc] scoped infix:39 " →βα " => BetaAlpha
 
-/-- η-reduction of `λNα`, used in Section 4.4 of the paper. -/
+/-- η-reduction of `λNα`, used in Section 4.4 [Norrish2007a]. -/
 inductive EtaAlpha : TermAlpha Var → TermAlpha Var → Prop where
   /-- Contraction of an η-redex `LAM x (APP M (VAR x))` with `x` not free in `M`. -/
   | red (x : Var) (m : Term Var) : x ∉ m.fv →
