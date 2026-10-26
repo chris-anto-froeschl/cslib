@@ -61,27 +61,27 @@ namespace Cslib.LambdaCalculus.Unscoped.Untyped
 
 namespace Term
 
-/-- `lift t k` (paper, Figure 2): add one to all free indices of `t` that are at least `k`.
-This is Cslib's `Term.incre 1 k`. -/
+/-- `lift t k` (Figure 2 [Norrish2007a]): add one to every free index of `t` that is at least
+`k`, which makes room for a new binder at depth `k`. This is Cslib's `Term.incre 1 k`. -/
 abbrev lift (t : Term) (k : ℕ) : Term := incre 1 k t
 
-/-- Figure 2: `lift` on `dV` (HOL `lift_def`). -/
+/-- `lift` on `dV` (Figure 2 [Norrish2007a], HOL `lift_def`). -/
 @[simp] lemma lift_var (i k : ℕ) : lift (var i) k = if i < k then var i else var (i + 1) := by
   by_cases h : k ≤ i <;> simp [lift, incre, h]
 
-/-- Figure 2: `lift` on `dAPP` (HOL `lift_def`). -/
+/-- `lift` on `dAPP` (Figure 2 [Norrish2007a], HOL `lift_def`). -/
 @[simp] lemma lift_app (t u : Term) (k : ℕ) : lift (app t u) k = app (lift t k) (lift u k) :=
   rfl
 
-/-- Figure 2: `lift` on `dABS` (HOL `lift_def`). -/
+/-- `lift` on `dABS` (Figure 2 [Norrish2007a], HOL `lift_def`). -/
 lemma lift_abs (t : Term) (k : ℕ) : lift (abs t) k = abs (lift t (k + 1)) := rfl
 
-/-- `nsub z k t` (paper, Figure 2): Nipkow's substitution, which simultaneously substitutes `z`
-for the index `k` and decrements all larger free indices.  This is Cslib's `Term.sub`, with the
-arguments in the order used by the paper. -/
+/-- `nsub z k t` (Figure 2 [Norrish2007a]): Nipkow's substitution, which puts `z` in place of the
+index `k` and at the same time decrements all larger free indices, as needed when a redex is
+contracted. This is Cslib's `Term.sub`, with the arguments in the order used by the paper. -/
 abbrev nsub (z : Term) (k : ℕ) (t : Term) : Term := t.sub k z
 
-/-- Figure 2: `nsub` on `dV` (HOL `nsub_def`). -/
+/-- `nsub` on `dV` (Figure 2 [Norrish2007a], HOL `nsub_def`). -/
 lemma nsub_var (z : Term) (k i : ℕ) :
     nsub z k (var i) = if k < i then var (i - 1) else if i = k then z else var i := by
   rcases lt_trichotomy i k with h | h | h
@@ -89,28 +89,28 @@ lemma nsub_var (z : Term) (k i : ℕ) :
   · simp [nsub, h]
   · simp [nsub, var_gt_sub h, h]
 
-/-- Figure 2: `nsub` on `dAPP` (HOL `nsub_def`). -/
+/-- `nsub` on `dAPP` (Figure 2 [Norrish2007a], HOL `nsub_def`). -/
 lemma nsub_app (z : Term) (k : ℕ) (t u : Term) :
     nsub z k (app t u) = app (nsub z k t) (nsub z k u) := rfl
 
-/-- Figure 2: `nsub` on `dABS` (HOL `nsub_def`). -/
+/-- `nsub` on `dABS` (Figure 2 [Norrish2007a], HOL `nsub_def`). -/
 lemma nsub_abs (z : Term) (k : ℕ) (t : Term) :
     nsub z k (abs t) = abs (nsub (lift z 0) (k + 1) t) := abs_sub_zero
 
-/-- **Definition 4**: `dsub z k t` (the paper's `sub`) substitutes `z` for the index `k` in `t`,
-without decrementing the other free indices.  An alias for `Term.subst` with the paper's argument
-order. -/
+/-- **Definition 4** [Norrish2007a]: `dsub z k t` (the paper's `sub`) puts `z` in place of the
+index `k` in `t` and leaves the other free indices alone. An alias for `Term.subst` with the
+paper's argument order. -/
 abbrev dsub (z : Term) (k : ℕ) (t : Term) : Term := subst k z t
 
-/-- Definition 4: `sub` on `dV` (HOL `sub_def`). -/
+/-- `sub` on `dV` (Definition 4 [Norrish2007a], HOL `sub_def`). -/
 @[simp] lemma dsub_var (z : Term) (k i : ℕ) : dsub z k (var i) = if i = k then z else var i :=
   rfl
 
-/-- Definition 4: `sub` on `dAPP` (HOL `sub_def`). -/
+/-- `sub` on `dAPP` (Definition 4 [Norrish2007a], HOL `sub_def`). -/
 @[simp] lemma dsub_app (z : Term) (k : ℕ) (t u : Term) :
     dsub z k (app t u) = app (dsub z k t) (dsub z k u) := rfl
 
-/-- Definition 4: `sub` on `dABS` (HOL `sub_def`). -/
+/-- `sub` on `dABS` (Definition 4 [Norrish2007a], HOL `sub_def`). -/
 lemma dsub_abs (z : Term) (k : ℕ) (t : Term) :
     dsub z k (abs t) = abs (dsub (lift z 0) (k + 1) t) := rfl
 
@@ -128,7 +128,7 @@ def dFV : Term → Finset ℕ
 @[simp] lemma mem_dFV_app (t u : Term) (j : ℕ) : j ∈ dFV (app t u) ↔ j ∈ dFV t ∨ j ∈ dFV u := by
   simp [dFV]
 
-/-- HOL `IN_dFV_thm`, the `dABS` case. -/
+/-- An index is free in `dABS t` iff its successor is free in `t` (HOL `IN_dFV_thm`). -/
 lemma mem_dFV_abs (t : Term) (j : ℕ) : j ∈ dFV (abs t) ↔ j + 1 ∈ dFV t := by
   constructor
   · intro h
@@ -176,7 +176,7 @@ lemma dsub_of_not_mem_dFV {t : Term} {k : ℕ} (h : k ∉ dFV t) (z : Term) : ds
       simp only [mem_dFV_abs] at h
       simp only [dsub_abs, ih h]
 
-/-- The number of nodes of a de Bruijn term (HOL `dbsize`).  Unlike `sizeOf`, it does not count
+/-- The number of nodes of a de Bruijn term (HOL `dbsize`). Unlike `sizeOf`, it does not count
 the numerals in `var` nodes, which `lift` and `dsub` change. -/
 def dbsize : Term → ℕ
   | var _ => 1
@@ -206,12 +206,13 @@ lemma dbsize_dsub_var (k j : ℕ) (t : Term) : dbsize (dsub (var k) j t) = dbsiz
   | app t u iht ihu => simp [dbsize_app, iht, ihu]
   | abs t ih => simp only [dsub_abs, dbsize_abs, lift_var]; split_ifs <;> simp [ih]
 
-/-- **Definition 5**: `dLAM i t` abstracts the free index `i` of `t`.  Like `LAM` on `Λα`, it is
-not injective. -/
+/-- **Definition 5** [Norrish2007a]: `dLAM i t` binds the free index `i` of `t`. It lifts `t`
+past the new binder, so that `i` becomes `i + 1`, and then points that index at the binder by
+substituting `dV 0` for it. Like `LAM` on `Λα`, it is not injective. -/
 def dLAM (i : ℕ) (t : Term) : Term := abs (dsub (var 0) (i + 1) (lift t 0))
 
-/-- The induction behind Lemma 6 (HOL `onto_lemma`): if `i` is not free in `t`, then `t` is a
-substitution of `dV n` for `i` in a lifted term. -/
+/-- The induction behind Lemma 6 [Norrish2007a] (HOL `onto_lemma`): if `i` is not free in `t`,
+then `t` is a substitution of `dV n` for `i` in a lifted term. -/
 lemma onto_lemma (t : Term) (i n : ℕ) (h : i ∉ dFV t) :
     ∃ t₀, t = dsub (var n) i (lift t₀ n) := by
   induction t generalizing i n with
@@ -255,8 +256,8 @@ lemma dfresh_exists (t : Term) : ∃ i, i ∉ dFV t := by
   obtain ⟨j, hj⟩ := dFV_bounded t
   exact ⟨j, fun h => lt_irrefl j (hj j h)⟩
 
-/-- **Lemma 6** (HOL `dABS_renamed`): if `i` is not free in `dABS t`, then `dABS t = dLAM i t₀`
-for some `t₀`. -/
+/-- **Lemma 6** [Norrish2007a] (HOL `dABS_renamed`): if `i` is not free in `dABS t`, then
+`dABS t = dLAM i t₀` for some `t₀`. -/
 lemma dABS_renamed {t : Term} {i : ℕ} (h : i ∉ dFV (abs t)) : ∃ t₀, abs t = dLAM i t₀ := by
   obtain ⟨t₀, ht⟩ := onto_lemma t (i + 1) 0 (by simpa [mem_dFV_abs] using h)
   exact ⟨t₀, by rw [dLAM, ← ht]⟩
@@ -310,8 +311,8 @@ lemma dsub_dLAM {z : Term} {i j : ℕ} {t : Term} (hij : i ≠ j) (hi : i ∉ dF
 end Term
 
 open Term in
-/-- **Definition 7**: β-reduction `→d'` of `dB'`, stated like β on `Λα` with `dLAM` in place of
-`LAM`. -/
+/-- **Definition 7** [Norrish2007a]: β-reduction `→d'` of `dB'`, stated like β on `Λα` with
+`dLAM` in place of `LAM`. -/
 inductive DBeta' : Term → Term → Prop where
   /-- Contraction: `dAPP (dLAM i t) u →d' sub u i t`. -/
   | red (i : ℕ) (t u : Term) : DBeta' (app (dLAM i t) u) (dsub u i t)
