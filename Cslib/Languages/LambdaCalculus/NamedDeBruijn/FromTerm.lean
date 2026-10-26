@@ -131,7 +131,7 @@ lemma fromTerm_permute (π : FinPerm) (m : Lam) :
 /-- The special case of `fromTerm_permute` for transpositions. -/
 lemma fromTerm_swap (a b : Atom) (m : Lam) :
     fromTerm (m.swap a b) = (FinPerm.swap a b) • fromTerm m := by
-  rw [← Cslib.LambdaCalculus.Named.Untyped.Term.permute_swap, ← fromTerm_permute]
+  rw [← Named.Untyped.Term.permute_swap, ← fromTerm_permute]
   rfl
 
 /-- The free indices of `f M` are the codes of the free variables of `M` (membership form of
@@ -141,16 +141,14 @@ lemma mem_dFV_fromTerm (m : Lam) (k : ℕ) :
   induction m with
   | var x =>
       change (k ∈ Term.dFV (Term.var x.val)) ↔ _
-      simp only [Term.mem_dFV_var, Cslib.LambdaCalculus.Named.Untyped.Term.fv,
-        Finset.mem_singleton]
+      simp only [Term.mem_dFV_var, Named.Untyped.Term.fv, Finset.mem_singleton]
       exact ⟨fun h => Atom.ext h.symm, fun h => (congrArg Atom.val h).symm⟩
   | app m n ihm ihn =>
       change (k ∈ Term.dFV (Term.app _ _)) ↔ _
-      simp only [Term.mem_dFV_app, ihm, ihn, Cslib.LambdaCalculus.Named.Untyped.Term.fv,
-        Finset.mem_union]
+      simp only [Term.mem_dFV_app, ihm, ihn, Named.Untyped.Term.fv, Finset.mem_union]
   | abs x m ih =>
       simp only [fromTerm_abs, Term.dFV_dLAM, Finset.mem_erase, ih,
-        Cslib.LambdaCalculus.Named.Untyped.Term.fv, Finset.mem_sdiff, Finset.mem_singleton]
+        Named.Untyped.Term.fv, Finset.mem_sdiff, Finset.mem_singleton]
       exact ⟨fun ⟨hk, hm⟩ => ⟨hm, fun hc => hk (congrArg Atom.val hc)⟩,
         fun ⟨hm, hx⟩ => ⟨fun hc => hx (Atom.ext hc), hm⟩⟩
 
@@ -169,20 +167,14 @@ lemma dLAM_swap_eq (m : Lam) (x y : Atom) (hx : x ∉ m.fv) :
     · intro hc
       exact hky (congrArg Atom.val hc)
   rw [Term.dpm_dLAM] at hsupp
-  rw [fromTerm_swap]
-  have hy : (FinPerm.swap x y) (Atom.ofNat y.val) = x := by
-    rw [Atom.val_ofNat]
-    exact FinPerm.swap_apply_right x y
-  rw [← hsupp, hy]
+  rw [fromTerm_swap, ← hsupp, Atom.val_ofNat, FinPerm.swap_apply_right]
 
 /-- The `rename` version of `dLAM_swap_eq`, matching the shape of the `abs` rule of
 `AlphaEquiv`. -/
 lemma dLAM_rename_eq (m : Lam) (y z : Atom) (hz : z ∉ m.vars) :
     Term.dLAM z.val (fromTerm (m.rename y z)) = Term.dLAM y.val (fromTerm m) := by
-  rw [← Cslib.LambdaCalculus.Named.Untyped.Term.swap_eq_rename_of_notMem_vars hz,
-    Cslib.LambdaCalculus.Named.Untyped.Term.swap_comm]
-  exact dLAM_swap_eq m z y
-    (fun hc => hz (Cslib.LambdaCalculus.Named.Untyped.Term.mem_vars_of_mem_fv hc))
+  rw [← Named.Untyped.Term.swap_eq_rename_of_notMem_vars hz, Named.Untyped.Term.swap_comm]
+  exact dLAM_swap_eq m z y (fun hc => hz (Named.Untyped.Term.mem_vars_of_mem_fv hc))
 
 /-- The map `f` respects α-equivalence, hence factors through `Λα`. -/
 lemma fromTerm_respects_alpha {m n : Lam} (h : m =α n) : fromTerm m = fromTerm n := by
@@ -236,7 +228,7 @@ lemma fromTerm_alphaEquiv_iff {m n : Lam} : fromTerm m = fromTerm n ↔ m =α n 
 "BVC-compatible" structural induction on `M`. -/
 lemma fromTerm_dsub (m n : Lam) (x : Atom) :
     fromTerm (m[x := n]) = Term.dsub (fromTerm n) x.val (fromTerm m) := by
-  induction m using Cslib.LambdaCalculus.Named.Untyped.Term.induction_by_sizeOf with
+  induction m using Named.Untyped.Term.induction_by_sizeOf with
   | step m ih =>
     match m with
     | .var y =>
@@ -326,9 +318,8 @@ lemma fromTerm_eq_dLAM {m : Lam} {i : ℕ} {d : Term} (h : fromTerm m = Term.dLA
   | .abs y m' =>
       change Term.dLAM y.val (fromTerm m') = _ at h
       rcases Term.dLAM_eq_dLAM_iff.mp h with ⟨hy, hd⟩ | ⟨_, hy, hd⟩
-      · refine ⟨m', ?_, hd⟩
-        rw [show y = Atom.ofNat i from Atom.ext hy]
-        exact AlphaEquiv.refl _
+      · obtain rfl : y = Atom.ofNat i := Atom.ext hy
+        exact ⟨m', AlphaEquiv.refl _, hd⟩
       · refine ⟨m'.swap (Atom.ofNat i) y, ?_, ?_⟩
         · have hifv : Atom.ofNat i ∉ m'.fv := by
             intro hc
