@@ -124,7 +124,7 @@ lemma fromTerm_permute (π : FinPerm) (m : Lam) :
       rfl
 
 /-- The special case of `fromTerm_permute` for transpositions. -/
-lemma fromTerm_swap (a b : Atom) (m : Lam) :
+private lemma fromTerm_swap (a b : Atom) (m : Lam) :
     fromTerm (m.swap a b) = (FinPerm.swap a b) • fromTerm m := by
   rw [← Named.Untyped.Term.permute_swap, ← fromTerm_permute]
   rfl
@@ -148,7 +148,7 @@ lemma mem_dFV_fromTerm (m : Lam) (k : ℕ) :
 
 /-- Renaming the abstracted variable by a transposition: if `x` is not free in `M`, then
 `dLAM x̂ (f ((x y) · M)) = dLAM ŷ (f M)`, the image under `f` of `LAM x ((x y) · M) = LAM y M`. -/
-lemma dLAM_swap_eq (m : Lam) (x y : Atom) (hx : x ∉ m.fv) :
+private lemma dLAM_swap_eq (m : Lam) (x y : Atom) (hx : x ∉ m.fv) :
     Term.dLAM x.val (fromTerm (m.swap x y)) = Term.dLAM y.val (fromTerm m) := by
   have hsupp : (FinPerm.swap x y) • Term.dLAM y.val (fromTerm m)
       = Term.dLAM y.val (fromTerm m) := by
@@ -165,7 +165,7 @@ lemma dLAM_swap_eq (m : Lam) (x y : Atom) (hx : x ∉ m.fv) :
 
 /-- The `rename` version of `dLAM_swap_eq`, matching the shape of the `abs` rule of
 `AlphaEquiv`. -/
-lemma dLAM_rename_eq (m : Lam) (y z : Atom) (hz : z ∉ m.vars) :
+private lemma dLAM_rename_eq (m : Lam) (y z : Atom) (hz : z ∉ m.vars) :
     Term.dLAM z.val (fromTerm (m.rename y z)) = Term.dLAM y.val (fromTerm m) := by
   rw [← Named.Untyped.Term.swap_eq_rename_of_notMem_vars hz, Named.Untyped.Term.swap_comm]
   exact dLAM_swap_eq m z y (fun hc => hz (Named.Untyped.Term.mem_vars_of_mem_fv hc))
@@ -283,13 +283,13 @@ lemma fromTerm_surjective (t : Term) : ∃ m : Lam, fromTerm m = t := by
             rw [hm₀, Atom.val_ofNat, ← ht₀]⟩
 
 /-- Applying a transposition twice is the identity. -/
-lemma swap_apply_swap_apply (a b c : Atom) :
+private lemma swap_apply_swap_apply (a b c : Atom) :
     (FinPerm.swap a b) ((FinPerm.swap a b) c) = c := by
   rw [← FinPerm.mul_apply, FinPerm.swap_swap]
   rfl
 
 /-- If `f M` is an application, so is `M`. -/
-lemma fromTerm_eq_app {m : Lam} {d₁ d₂ : Term} (h : fromTerm m = Term.app d₁ d₂) :
+private lemma fromTerm_eq_app {m : Lam} {d₁ d₂ : Term} (h : fromTerm m = Term.app d₁ d₂) :
     ∃ m₁ m₂ : Lam, m = .app m₁ m₂ ∧ fromTerm m₁ = d₁ ∧ fromTerm m₂ = d₂ := by
   match m with
   | .var x => simp [fromTerm] at h
@@ -302,7 +302,7 @@ lemma fromTerm_eq_app {m : Lam} {d₁ d₂ : Term} (h : fromTerm m = Term.app d�
 /-- If `f M` is a `dLAM`-abstraction over `i`, then `M` is α-equivalent to an abstraction
 over `î`.  The "swapped" branch of `Term.dLAM_eq_dLAM_iff` is matched by
 `abs_swap_alphaEquiv` on the named side. -/
-lemma fromTerm_eq_dLAM {m : Lam} {i : ℕ} {d : Term} (h : fromTerm m = Term.dLAM i d) :
+private lemma fromTerm_eq_dLAM {m : Lam} {i : ℕ} {d : Term} (h : fromTerm m = Term.dLAM i d) :
     ∃ m₀ : Lam, m =α (.abs (Atom.ofNat i) m₀) ∧ fromTerm m₀ = d := by
   match m with
   | .var x => simp [fromTerm, Term.dLAM] at h
@@ -371,7 +371,7 @@ lemma toDB_injective {M N : TermAlpha Atom} (h : toDB M = toDB N) : M = N := by
     | _ n => exact TermAlpha.mk_eq_mk.mpr (fromTerm_alphaEquiv_iff.mp h)
 
 /-- The quotient-level form of `fromTerm_dsub`. -/
-@[simp] lemma toDB_subst (M N : TermAlpha Atom) (x : Atom) :
+lemma toDB_subst (M N : TermAlpha Atom) (x : Atom) :
     toDB (TermAlpha.subst M x N) = Term.dsub (toDB N) x.val (toDB M) := by
   induction M using TermAlpha.ind with
   | _ m =>
@@ -398,7 +398,7 @@ lemma toDB_eq_dLAM {M : TermAlpha Atom} {i : ℕ} {d : Term} (h : toDB M = Term.
 `fromTerm_dsub`. -/
 lemma dbeta'_of_betaAlpha {M N : TermAlpha Atom} (h : M →βα N) : toDB M →d' toDB N := by
   induction h with
-  | red x M N => simpa using DBeta'.red x.val (toDB M) (toDB N)
+  | red x M N => simpa [toDB_subst] using DBeta'.red x.val (toDB M) (toDB N)
   | appL Z _ ih => simpa using DBeta'.appL (toDB Z) ih
   | appR Z _ ih => simpa using DBeta'.appR (toDB Z) ih
   | abs x _ ih => simpa using DBeta'.lam x.val ih
