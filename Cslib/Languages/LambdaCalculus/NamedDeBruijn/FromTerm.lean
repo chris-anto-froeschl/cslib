@@ -372,7 +372,8 @@ noncomputable def dbEquiv : TermAlpha Atom ≃ Term where
   right_inv := fun t => (fromTerm_surjective t).choose_spec
 
 /-- `f` is injective on `Λα` (the injectivity half of Theorem 11). -/
-lemma toDB_injective {M N : TermAlpha Atom} (h : toDB M = toDB N) : M = N := by
+lemma toDB_injective : Function.Injective toDB := by
+  intro M N h
   induction M using TermAlpha.ind with
   | _ m =>
     induction N using TermAlpha.ind with
