@@ -16,7 +16,7 @@ public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.LiftingPermutation
 Theorems 11 and 12 of [Norrish2007a]: the bijection `f : Λα → dB`, and `f` turns `→β` on `Λα`
 into `→d'` on `dB`.
 
-## The map `f`
+## Implementation notes
 
 The paper's map `f : Λα → dB` is characterised by the equations (5)
 
@@ -30,6 +30,13 @@ The paper obtains `f` from Pitts' α-structural recursion principle [Pitts2006].
 is defined by structural recursion on raw terms, where the equations (5) hold by definition;
 `fromTerm_respects_alpha` shows that it respects `=α` (using `dLAM_rename_eq`, which rests on
 Theorem 10), and `toDB` is the induced map on `Λα`.
+
+## Main definitions
+
+* `Lam` : the raw named syntax `Λvar` over `Atom`, with the `HasFresh Atom` instance.
+* `fromTerm` : the map `f` of equation (5) on raw terms.
+* `toDB` : the induced map `f : Λα → dB`.
+* `dbEquiv` : `f` as an equivalence `Λα ≃ dB` (Theorem 11).
 
 ## Main statements
 
