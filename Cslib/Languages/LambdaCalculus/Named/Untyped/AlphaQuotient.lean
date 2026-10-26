@@ -21,7 +21,7 @@ defined *directly on the quotient*.
 
 Cslib already provides the raw syntax `Λvar` (`Named.Untyped.Term`), capture-avoiding
 substitution on it, α-equivalence (`Term.AlphaEquiv`) and the proofs
-that α-equivalence is an equivalence relation and is respected by substitution.  What is added
+that α-equivalence is an equivalence relation and is respected by substitution. What is added
 here is only the quotient packaging:
 
 | Paper                | Cslib                    |
@@ -34,13 +34,16 @@ here is only the quotient packaging:
 | `LAM v M`            | `TermAlpha.abs v M`      |
 | `M[v := N]`          | `TermAlpha.subst M v N`  |
 | `→β` of `λNα`        | `BetaAlpha`              |
+| `→η` of `λNα`        | `EtaAlpha`               |
 
 ## Main definitions
 
-* `Term.alphaSetoid`, `TermAlpha` : the type `Λα`.
+* `Term.alphaSetoid`, `TermAlpha` : the type `Λα`; `TermAlpha.mk` (notation `⟦m⟧α`) takes a raw
+  term to its class.
 * `TermAlpha.var`, `TermAlpha.app`, `TermAlpha.abs`, `TermAlpha.subst` : the operations of `Λα`,
   lifted from `Λvar` through the quotient. `TermAlpha.abs` is not injective.
 * `BetaAlpha` : β-reduction of `λNα`, defined directly at the quotient level.
+* `EtaAlpha` : η-reduction of `λNα` (Section 4.4 of the paper).
 
 ## References
 
