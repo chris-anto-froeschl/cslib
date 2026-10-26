@@ -57,7 +57,7 @@ variable {Var : Type u} [DecidableEq Var] [HasFresh Var]
 omit [HasFresh Var] in
 /-- A free variable is a variable. -/
 lemma mem_vars_of_mem_fv {n : Term Var} {a : Var} (h : a ∈ n.fv) : a ∈ n.vars := by
-  rw [vars_eq_fv_union_bv]; exact Finset.mem_union_left _ h
+  grind [vars_eq_fv_union_bv]
 
 /-- Abstracting a term over `y` is α-equivalent to abstracting the swapped term over a variable
 `x` that is not free in it.  This is the named analogue of the second disjunct of
@@ -69,13 +69,8 @@ lemma abs_swap_alphaEquiv {n : Term Var} {x y : Var} (hx : x ∉ n.fv) :
   obtain ⟨⟨hzn, hzs⟩, hzx, hzy⟩ := hz
   refine AlphaEquiv.abs (y := z) (by simp [hzn, hzs, hzx, hzy]) ?_
   rw [← swap_eq_rename_of_notMem_vars hzn, ← swap_eq_rename_of_notMem_vars hzs]
-  have h : Set.EqOn (Equiv.swap y z) ((Equiv.swap x y).trans (Equiv.swap x z)) n.fv := by
-    intro a ha
-    have hax : a ≠ x := fun hc => hx (hc ▸ ha)
-    have haz : a ≠ z := fun hc => hzn (hc ▸ mem_vars_of_mem_fv ha)
-    obtain rfl | hay := eq_or_ne a y
-    · simp
-    · simp [Equiv.swap_apply_def, hax, hay, haz]
+  have h : Set.EqOn (Equiv.swap y z) ((Equiv.swap x y).trans (Equiv.swap x z)) n.fv :=
+    fun a ha => by grind [mem_vars_of_mem_fv]
   have h' := permute_alphaEquiv_of_eqOn_fv n _ _ h
   rwa [permute_swap, ← permute_permute, permute_swap, permute_swap] at h'
 
@@ -142,15 +137,14 @@ lemma mem_dFV_fromTerm (m : Lam) (k : ℕ) :
   | var x =>
       change (k ∈ Term.dFV (Term.var x.val)) ↔ _
       simp only [Term.mem_dFV_var, Named.Untyped.Term.fv, Finset.mem_singleton]
-      exact ⟨fun h => Atom.ext h.symm, fun h => (congrArg Atom.val h).symm⟩
+      grind [Atom.ext_iff, Atom.ofNat_val]
   | app m n ihm ihn =>
       change (k ∈ Term.dFV (Term.app _ _)) ↔ _
       simp only [Term.mem_dFV_app, ihm, ihn, Named.Untyped.Term.fv, Finset.mem_union]
   | abs x m ih =>
       simp only [fromTerm_abs, Term.dFV_dLAM, Finset.mem_erase, ih,
         Named.Untyped.Term.fv, Finset.mem_sdiff, Finset.mem_singleton]
-      exact ⟨fun ⟨hk, hm⟩ => ⟨hm, fun hc => hk (congrArg Atom.val hc)⟩,
-        fun ⟨hm, hx⟩ => ⟨fun hc => hx (Atom.ext hc), hm⟩⟩
+      grind [Atom.ext_iff, Atom.ofNat_val]
 
 /-- Renaming the abstracted variable by a transposition: if `x` is not free in `M`, then
 `dLAM x̂ (f ((x y) · M)) = dLAM ŷ (f M)`, the image under `f` of `LAM x ((x y) · M) = LAM y M`. -/
@@ -240,7 +234,7 @@ lemma fromTerm_dsub (m n : Lam) (x : Atom) :
         have e : (Named.Untyped.Term.app m₁ m₂)[x := n]
             = Named.Untyped.Term.app (m₁[x := n]) (m₂[x := n]) := by
           simp [Named.Untyped.Term.subst]
-        rw [e, fromTerm_app, ih m₁ (by simp; omega), ih m₂ (by simp)]
+        rw [e, fromTerm_app, ih m₁ (by simp +arith), ih m₂ (by simp)]
         rfl
     | .abs y m' =>
         obtain ⟨z, hz⟩ := HasFresh.fresh_exists (m'.vars ∪ n.vars ∪ {x, y})
@@ -249,9 +243,7 @@ lemma fromTerm_dsub (m n : Lam) (x : Atom) :
         simp only [Finset.mem_union, Finset.mem_insert, Finset.mem_singleton, not_or] at hz
         obtain ⟨⟨hzm, hzn⟩, hzx, _⟩ := hz
         have hzdfv : z.val ∉ Term.dFV (fromTerm n) := fun hc =>
-          hzn (Named.Untyped.Term.mem_vars_of_mem_fv (by
-            have h := (mem_dFV_fromTerm n z.val).mp hc
-            rwa [Atom.val_ofNat] at h))
+          hzn (Named.Untyped.Term.mem_vars_of_mem_fv ((mem_dFV_fromTerm n z.val).mp hc))
         rw [fromTerm_respects_alpha halpha]
         change Term.dLAM z.val (fromTerm ((m'.rename y z)[x := n])) = _
         rw [ih (m'.rename y z) (by simp), ← Term.dsub_dLAM (fun hc => hzx (Atom.ext hc)) hzdfv,
