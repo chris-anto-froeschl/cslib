@@ -76,7 +76,7 @@ def mk (m : Term Var) : TermAlpha Var := Quotient.mk (Term.alphaSetoid Var) m
 
 /-- Two raw terms have the same class iff they are α-equivalent. -/
 lemma mk_eq_mk {m n : Term Var} : (⟦m⟧α : TermAlpha Var) = ⟦n⟧α ↔ m =α n :=
-  ⟨fun h => Quotient.exact h, fun h => Quotient.sound h⟩
+  Quotient.eq
 
 /-- Variables of `Λα`. -/
 def var (x : Var) : TermAlpha Var := ⟦Term.var x⟧α
