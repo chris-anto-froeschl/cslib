@@ -223,7 +223,8 @@ theorem fromTerm_N : fromTerm N = abs (app (var 0) (var 2)) := by decide
 -- In general, `f (λx. x y) = λ. 0 (ŷ + 1)` for distinct atoms `x` and `y`.
 example (x y : Atom) (h : x ≠ y) :
     fromTerm (.abs x (.app (.var x) (.var y))) = abs (app (var 0) (var (y.val + 1))) := by
-  simpa [Term.dLAM, Term.dsub, Term.lift] using fun e => h (Atom.ext e.symm)
+  simpa [fromTerm_abs, fromTerm_app, Term.dLAM, Term.dsub, Term.lift] using
+    fun e => h (Atom.ext e.symm)
 
 -- `λb. b a` is a different term.
 example : fromTerm (.abs b (.app (.var b) (.var a))) = abs (app (var 0) (var 1)) := by decide
