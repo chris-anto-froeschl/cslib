@@ -259,7 +259,7 @@ lemma fromTerm_surjective (t : Term) : ∃ m : Lam, fromTerm m = t := by
   induction k with
   | zero =>
       intro t ht
-      exact absurd ht (by cases t <;> simp)
+      exact absurd ht (by cases t <;> simp [Term.dbsize])
   | succ k ih =>
       intro t ht
       match t with

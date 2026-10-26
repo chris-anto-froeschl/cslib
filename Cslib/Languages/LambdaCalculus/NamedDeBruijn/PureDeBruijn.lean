@@ -74,7 +74,7 @@ abbrev lift (t : Term) (k : ℕ) : Term := incre 1 k t
   rfl
 
 /-- Figure 2: `lift` on `dABS` (HOL `lift_def`). -/
-@[simp] lemma lift_abs (t : Term) (k : ℕ) : lift (abs t) k = abs (lift t (k + 1)) := rfl
+lemma lift_abs (t : Term) (k : ℕ) : lift (abs t) k = abs (lift t (k + 1)) := rfl
 
 /-- `nsub z k t` (paper, Figure 2): Nipkow's substitution, which simultaneously substitutes `z`
 for the index `k` and decrements all larger free indices.  This is Cslib's `Term.sub`, with the
@@ -129,7 +129,7 @@ def dFV : Term → Finset ℕ
   simp [dFV]
 
 /-- HOL `IN_dFV_thm`, the `dABS` case. -/
-@[simp] lemma mem_dFV_abs (t : Term) (j : ℕ) : j ∈ dFV (abs t) ↔ j + 1 ∈ dFV t := by
+lemma mem_dFV_abs (t : Term) (j : ℕ) : j ∈ dFV (abs t) ↔ j + 1 ∈ dFV t := by
   constructor
   · intro h
     simp only [dFV, Finset.mem_image, Finset.mem_erase] at h
@@ -184,26 +184,26 @@ def dbsize : Term → ℕ
   | abs t => dbsize t + 1
 
 /-- `dbsize` on `dV` (HOL `dbsize_def`). -/
-@[simp] lemma dbsize_var (i : ℕ) : dbsize (var i) = 1 := rfl
+lemma dbsize_var (i : ℕ) : dbsize (var i) = 1 := rfl
 
 /-- `dbsize` on `dAPP` (HOL `dbsize_def`). -/
-@[simp] lemma dbsize_app (t u : Term) : dbsize (app t u) = dbsize t + dbsize u + 1 := rfl
+lemma dbsize_app (t u : Term) : dbsize (app t u) = dbsize t + dbsize u + 1 := rfl
 
 /-- `dbsize` on `dABS` (HOL `dbsize_def`). -/
-@[simp] lemma dbsize_abs (t : Term) : dbsize (abs t) = dbsize t + 1 := rfl
+lemma dbsize_abs (t : Term) : dbsize (abs t) = dbsize t + 1 := rfl
 
 /-- Lifting preserves `dbsize` (HOL `dbsize_lift`). -/
 lemma dbsize_lift (t : Term) (n : ℕ) : dbsize (lift t n) = dbsize t := by
   induction t generalizing n with
   | var i => simp only [lift_var]; split_ifs <;> rfl
-  | app t u iht ihu => simp [iht, ihu]
-  | abs t ih => simp [ih]
+  | app t u iht ihu => simp [dbsize_app, iht, ihu]
+  | abs t ih => simp [lift_abs, dbsize_abs, ih]
 
 /-- Substituting a variable preserves `dbsize` (compare HOL `dbsize_sub`). -/
 lemma dbsize_dsub_var (k j : ℕ) (t : Term) : dbsize (dsub (var k) j t) = dbsize t := by
   induction t generalizing k j with
   | var m => simp only [dsub_var]; split_ifs <;> rfl
-  | app t u iht ihu => simp [iht, ihu]
+  | app t u iht ihu => simp [dbsize_app, iht, ihu]
   | abs t ih => simp only [dsub_abs, dbsize_abs, lift_var]; split_ifs <;> simp [ih]
 
 /-- **Definition 5**: `dLAM i t` abstracts the free index `i` of `t`.  Like `LAM` on `Λα`, it is
@@ -258,7 +258,7 @@ lemma dfresh_exists (t : Term) : ∃ i, i ∉ dFV t := by
 /-- **Lemma 6** (HOL `dABS_renamed`): if `i` is not free in `dABS t`, then `dABS t = dLAM i t₀`
 for some `t₀`. -/
 lemma dABS_renamed {t : Term} {i : ℕ} (h : i ∉ dFV (abs t)) : ∃ t₀, abs t = dLAM i t₀ := by
-  obtain ⟨t₀, ht⟩ := onto_lemma t (i + 1) 0 (by simpa using h)
+  obtain ⟨t₀, ht⟩ := onto_lemma t (i + 1) 0 (by simpa [mem_dFV_abs] using h)
   exact ⟨t₀, by rw [dLAM, ← ht]⟩
 
 /-- The free indices of a `dLAM`-abstraction (HOL `dFVs_dLAM`). -/
@@ -297,7 +297,7 @@ lemma dsub_dsub_comm {a b : Term} {k l : ℕ} (hkl : k ≠ l) (hb : k ∉ dFV b)
 
 /-- `dLAM` adds one node. -/
 lemma dbsize_dLAM (i : ℕ) (t : Term) : dbsize (dLAM i t) = dbsize t + 1 := by
-  simp [dLAM, dbsize_lift, dbsize_dsub_var]
+  simp [dLAM, dbsize_abs, dbsize_lift, dbsize_dsub_var]
 
 /-- HOL `sub_dLAM`: substitution interacts with `dLAM` as it does with `LAM` in `Λα`. -/
 lemma dsub_dLAM {z : Term} {i j : ℕ} {t : Term} (hij : i ≠ j) (hi : i ∉ dFV z) :
