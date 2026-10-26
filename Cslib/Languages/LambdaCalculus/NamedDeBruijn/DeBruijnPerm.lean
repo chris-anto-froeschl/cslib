@@ -75,7 +75,7 @@ lemma gdecAtom_gincAtom (g : ℕ) (a : Atom) : gdecAtom g (gincAtom g a) = a := 
 
 /-- HOL `ginc_neq`: `ginc` never hits the guard. -/
 lemma gincAtom_ne (g : ℕ) (a : Atom) : (gincAtom g a).val ≠ g := by
-  by_cases h : a.val < g <;> simp [gincAtom, h] <;> omega
+  grind [gincAtom]
 
 /-- `gincAtom g` undoes `gdecAtom g` on every atom other than the guard. -/
 lemma gincAtom_gdecAtom {g : ℕ} {a : Atom} (h : a.val ≠ g) : gincAtom g (gdecAtom g a) = a := by
@@ -93,10 +93,8 @@ lemma incFun_incFun_inv (g : ℕ) (π : FinPerm) (a : Atom) :
     incFun g π (incFun g π⁻¹ a) = a := by
   by_cases h : a.val = g
   · simp [incFun, h]
-  · have h1 : (gincAtom g (π⁻¹ (gdecAtom g a))).val ≠ g := gincAtom_ne _ _
-    simp only [incFun, h, ite_false, h1, gdecAtom_gincAtom]
-    rw [show π (π⁻¹ (gdecAtom g a)) = gdecAtom g a from
-      Equiv.apply_symm_apply π.val (gdecAtom g a)]
+  · simp only [incFun, h, ite_false, gincAtom_ne, gdecAtom_gincAtom, ← FinPerm.mul_apply,
+      mul_inv_cancel, FinPerm.one_apply]
     exact gincAtom_gdecAtom h
 
 /-- `incFun g π⁻¹` is a left inverse of `incFun g π`. -/
@@ -133,7 +131,7 @@ lemma incFun_zero_val (π : FinPerm) (v : ℕ) :
 
 /-- `lift` on a variable is the guarded increment of atoms. -/
 lemma lift_var_eq (i n : ℕ) : lift (var i) n = var (gincAtom n (Atom.ofNat i)).val := by
-  by_cases h : i < n <;> simp [lift_var, gincAtom, Atom.ofNat, h]
+  grind [lift_var, gincAtom, Atom.ofNat]
 
 /-- Incrementing the identity permutation gives the identity. -/
 lemma incPerm_one (g : ℕ) : incPerm g 1 = 1 := by
