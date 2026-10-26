@@ -102,8 +102,7 @@ lemma incFun_incFun_inv (g : ℕ) (π : FinPerm) (a : Atom) :
 /-- `incFun g π⁻¹` is a left inverse of `incFun g π`. -/
 lemma incFun_inv_incFun (g : ℕ) (π : FinPerm) (a : Atom) :
     incFun g π⁻¹ (incFun g π a) = a := by
-  have h := incFun_incFun_inv g π⁻¹ a
-  rwa [inv_inv] at h
+  simpa only [inv_inv] using incFun_incFun_inv g π⁻¹ a
 
 /-- **Definition 8**: the increment `inc g` of a permutation, for an arbitrary guard `g`.
 `incPerm 0` is the paper's `inc`. -/
@@ -227,8 +226,7 @@ lemma supports_dFV (t : Term) : Supports ((dFV t).image Atom.ofNat) t := by
   intro π hπ
   induction t generalizing π with
   | var i =>
-      have hfix : π (Atom.ofNat i) = Atom.ofNat i := hπ _ (by simp)
-      rw [dpm_var, hfix]
+      rw [dpm_var, hπ _ (by simp)]
       rfl
   | app t u iht ihu =>
       rw [dpm_app, iht π (fun a ha => hπ a ?_), ihu π (fun a ha => hπ a ?_)] <;>
@@ -323,7 +321,6 @@ lemma DBeta'.dpm {t u : Term} (h : t →d' u) (π : FinPerm) : (π • t) →d' 
 follows from the forward one because all permutations have inverses. -/
 theorem DBeta'.equivariant (π : FinPerm) (t u : Term) : (π • t) →d' (π • u) ↔ t →d' u := by
   refine ⟨fun h => ?_, fun h => h.dpm π⟩
-  have h2 := h.dpm π⁻¹
-  rwa [inv_smul_smul, inv_smul_smul] at h2
+  simpa only [inv_smul_smul] using h.dpm π⁻¹
 
 end Cslib.LambdaCalculus.Unscoped.Untyped
