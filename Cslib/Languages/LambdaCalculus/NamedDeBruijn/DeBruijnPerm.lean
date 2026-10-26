@@ -61,8 +61,8 @@ open Cslib.Logic.Nominal
 
 namespace Term
 
-/-- `gincAtom g a` (HOL `ginc_def`): the atom `a` is untouched if the corresponding index is
-less than the guard `g`, and bumped by one otherwise. -/
+/-- `gincAtom g a` (HOL `ginc_def`): the guarded increment, `lift`'s shift on atoms. The atom
+`a` is untouched if its index is below the guard `g`, and bumped by one otherwise. -/
 def gincAtom (g : ℕ) (a : Atom) : Atom := if a.val < g then a else ⟨a.val + 1⟩
 
 /-- The inverse of `gincAtom g` on its image (which is everything but the atom `ĝ`). -/
@@ -103,8 +103,12 @@ lemma incFun_inv_incFun (g : ℕ) (π : FinPerm) (a : Atom) :
     incFun g π⁻¹ (incFun g π a) = a := by
   simpa only [inv_inv] using incFun_incFun_inv g π⁻¹ a
 
-/-- **Definition 8**: the increment `inc g` of a permutation, for an arbitrary guard `g`.
-`incPerm 0` is the paper's `inc`. -/
+/-- **Definition 8** [Norrish2007a], for an arbitrary guard `g`: the increment `inc g π` of a
+permutation. It shifts the entries of `π` the way `lift t g` shifts indices: entries below `g`
+stay, the others go up by one (HOL `inc_pm_def` applies `ginc g` to both atoms of every swap).
+The resulting permutation fixes the gap `g`, which `gincAtom g` never hits (`gincAtom_ne`). The
+paper's phrase "the index below which variables should not be touched" describes the entries,
+not this action. `incPerm 0` is the paper's `inc`. -/
 def incPerm (g : ℕ) (π : FinPerm) : FinPerm :=
   ⟨⟨incFun g π, incFun g π⁻¹, incFun_inv_incFun g π, incFun_incFun_inv g π⟩,
     (π.suppWitness.image (gincAtom g)) ∪ {⟨g⟩}, by
@@ -159,40 +163,40 @@ lemma incPerm_zero_incPerm (n : ℕ) (π : FinPerm) :
     Nat.le_zero_eq]
   split_ifs <;> apply Atom.ext <;> (try dsimp only at *) <;> omega
 
-/-- **Definition 8**: the permutation action on `dB`.  Under `abs` the free indices move up by
-one, so the permutation is incremented. -/
+/-- **Definition 8** [Norrish2007a]: the permutation action on `dB`. Under `dABS` the free
+indices move up by one, so the permutation is incremented. -/
 def dpm (π : FinPerm) : Term → Term
   | var i => var (π (Atom.ofNat i)).val
   | app t u => app (dpm π t) (dpm π u)
   | abs t => abs (dpm (incPerm 0 π) t)
 
-/-- The identity permutation acts trivially (first condition of (4)). -/
+/-- The identity permutation acts trivially (first condition of (4) [Norrish2007a]). -/
 lemma dpm_one (t : Term) : dpm 1 t = t := by
   induction t with
   | var i => simp [dpm]
   | app t u iht ihu => simp [dpm, iht, ihu]
   | abs t ih => simp only [dpm, incPerm_one, ih]
 
-/-- Acting by a product is acting twice (second condition of (4)). -/
+/-- Acting by a product is acting twice (second condition of (4) [Norrish2007a]). -/
 lemma dpm_mul (π₁ π₂ : FinPerm) (t : Term) : dpm (π₁ * π₂) t = dpm π₁ (dpm π₂ t) := by
   induction t generalizing π₁ π₂ with
   | var i => simp [dpm]
   | app t u iht ihu => simp [dpm, iht, ihu]
   | abs t ih => simp only [dpm, incPerm_mul, ih]
 
-/-- de Bruijn terms carry a permutation action, i.e. the conditions (4) of the paper hold. -/
+/-- de Bruijn terms carry a permutation action: the conditions (4) [Norrish2007a] hold. -/
 instance : MulAction FinPerm Term where
   smul := dpm
   one_smul := dpm_one
   mul_smul := dpm_mul
 
-/-- Definition 8, `dV` case: `π · dV i = dV (π(î))`. -/
+/-- Definition 8 [Norrish2007a], `dV` case: `π · dV i = dV (π(î))`. -/
 lemma dpm_var (π : FinPerm) (i : ℕ) : π • var i = var (π (Atom.ofNat i)).val := rfl
 
-/-- Definition 8, `dAPP` case. -/
+/-- Definition 8 [Norrish2007a], `dAPP` case. -/
 lemma dpm_app (π : FinPerm) (t u : Term) : π • app t u = app (π • t) (π • u) := rfl
 
-/-- Definition 8, `dABS` case: under a binder the permutation is incremented. -/
+/-- Definition 8 [Norrish2007a], `dABS` case: under a binder the permutation is incremented. -/
 lemma dpm_abs (π : FinPerm) (t : Term) : π • abs t = abs ((incPerm 0 π) • t) := rfl
 
 /-- The free indices of a permuted term. -/
@@ -218,7 +222,7 @@ lemma mem_dFV_dpm (π : FinPerm) (t : Term) (i : ℕ) :
         rw [incPerm_apply, incFun_zero_val]
         simp only [Nat.add_one_ne_zero, ite_false, Nat.add_sub_cancel, hv]
 
-/-- The free indices of a de Bruijn term, as atoms, support it (paper, Section 4.2; HOL
+/-- The free indices of a de Bruijn term, as atoms, support it (Section 4.2 [Norrish2007a]; HOL
 `dpm_fresh`). HOL's `dpm_supp` also shows that they are the least support; that is not needed
 here. -/
 lemma supports_dFV (t : Term) : Supports ((dFV t).image Atom.ofNat) t := by
@@ -246,7 +250,7 @@ lemma supports_dFV (t : Term) : Supports ((dFV t).image Atom.ofNat) t := by
         simp only [Atom.ofNat]
         omega
 
-/-- Permuting a term permutes its free indices (set form of HOL `IN_dFV_dpm`).  Only used for
+/-- Permuting a term permutes its free indices (set form of HOL `IN_dFV_dpm`). Only used for
 the `NomSet` instance below. -/
 lemma dFV_dpm (t : Term) (π : FinPerm) :
     (dFV (π • t)).image Atom.ofNat = ((dFV t).image Atom.ofNat).image (π ·) := by
@@ -258,8 +262,8 @@ lemma dFV_dpm (t : Term) (π : FinPerm) :
   · rintro ⟨b, ⟨j, hj, rfl⟩, rfl⟩
     exact ⟨(π (Atom.ofNat j)).val, ⟨j, hj, rfl⟩, Atom.val_ofNat _⟩
 
-/-- de Bruijn terms form a nominal set, with support the set of free indices (paper,
-Section 4.2).  Not used by the current proofs, which define `f` on raw terms; kept for a future
+/-- de Bruijn terms form a nominal set, with support the set of free indices (Section 4.2
+[Norrish2007a]). Not used by the current proofs, which define `f` on raw terms; kept for a future
 definition of `f` by Pitts' recursion, which needs it. -/
 instance : NomSet Term where
   toMulAction := inferInstance
@@ -267,7 +271,8 @@ instance : NomSet Term where
   supp_supports := supports_dFV
   supp_equivariant := dFV_dpm
 
-/-- **Lemma 9** (Permutations and `lift`): `lift (π · t) n = (inc n π) · (lift t n)`. -/
+/-- **Lemma 9** [Norrish2007a] (Permutations and `lift`):
+`lift (π · t) n = (inc n π) · (lift t n)`. -/
 lemma lift_dpm (π : FinPerm) (t : Term) (n : ℕ) :
     lift (π • t) n = (incPerm n π) • (lift t n) := by
   induction t generalizing π n with
@@ -280,7 +285,7 @@ lemma lift_dpm (π : FinPerm) (t : Term) (n : ℕ) :
   | abs t ih =>
       rw [dpm_abs, lift_abs, lift_abs, dpm_abs, ih, incPerm_zero_incPerm]
 
-/-- **Theorem 10**, substitution part: `sub` has empty support,
+/-- **Theorem 10** [Norrish2007a], substitution part: `sub` has empty support,
 `π · (sub t j u) = sub (π · t) (π(ĵ)) (π · u)` (HOL `dpm_sub`). -/
 theorem dpm_dsub (π : FinPerm) (t : Term) (j : ℕ) (u : Term) :
     π • (dsub t j u) = dsub (π • t) (π (Atom.ofNat j)).val (π • u) := by
@@ -297,7 +302,7 @@ theorem dpm_dsub (π : FinPerm) (t : Term) (j : ℕ) (u : Term) :
       simp only [dsub_abs, dpm_abs, ih, ← lift_dpm]
       congr 1
 
-/-- **Theorem 10**, abstraction part: `dLAM` has empty support,
+/-- **Theorem 10** [Norrish2007a], abstraction part: `dLAM` has empty support,
 `π · (dLAM i t) = dLAM (π(î)) (π · t)` (HOL `dpm_dLAM`). -/
 theorem dpm_dLAM (π : FinPerm) (i : ℕ) (t : Term) :
     π • (dLAM i t) = dLAM (π (Atom.ofNat i)).val (π • t) := by
@@ -306,7 +311,8 @@ theorem dpm_dLAM (π : FinPerm) (i : ℕ) (t : Term) :
 
 end Term
 
-/-- **Theorem 10**, forward direction of the equivariance of `→d'`, by rule induction. -/
+/-- **Theorem 10** [Norrish2007a], forward direction of the equivariance of `→d'`, by rule
+induction. -/
 lemma DBeta'.dpm {t u : Term} (h : t →d' u) (π : FinPerm) : (π • t) →d' (π • u) := by
   induction h generalizing π with
   | red i t u =>
@@ -316,8 +322,8 @@ lemma DBeta'.dpm {t u : Term} (h : t →d' u) (π : FinPerm) : (π • t) →d' 
   | appR z _ ih => rw [Term.dpm_app, Term.dpm_app]; exact DBeta'.appR _ (ih π)
   | lam i _ ih => rw [Term.dpm_dLAM, Term.dpm_dLAM]; exact DBeta'.lam _ (ih π)
 
-/-- **Theorem 10**, equivariance of `→d'`: `π · t →d' π · u ⇔ t →d' u`.  The backward direction
-follows from the forward one because all permutations have inverses. -/
+/-- **Theorem 10** [Norrish2007a], equivariance of `→d'`: `π · t →d' π · u ⇔ t →d' u`. The
+backward direction follows from the forward one because all permutations have inverses. -/
 theorem DBeta'.equivariant (π : FinPerm) (t u : Term) : (π • t) →d' (π • u) ↔ t →d' u := by
   refine ⟨fun h => ?_, fun h => h.dpm π⟩
   simpa only [inv_smul_smul] using h.dpm π⁻¹
