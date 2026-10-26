@@ -182,7 +182,9 @@ lemma dsub_of_not_mem_dFV {t : Term} {k : ℕ} (h : k ∉ dFV t) (z : Term) : ds
   | app t₁ t₂ ih₁ ih₂ =>
       simp only [mem_dFV_app, not_or] at h
       simp only [dsub_app, ih₁ h.1, ih₂ h.2]
-  | abs t ih => simp only [mem_dFV_abs] at h; simp only [dsub_abs, ih h]
+  | abs t ih =>
+      simp only [mem_dFV_abs] at h
+      simp only [dsub_abs, ih h]
 
 /-- The number of nodes of a de Bruijn term (HOL `dbsize`).  Unlike `sizeOf`, it does not count
 the numerals in `var` nodes, which `lift` and `dsub` change. -/
@@ -229,14 +231,14 @@ lemma onto_lemma (t : Term) (i n : ℕ) (h : i ∉ dFV t) :
       · rcases lt_or_ge i m with hi | hi
         · refine ⟨var i, ?_⟩
           simp only [lift_var]; split_ifs <;> simp only [dsub_var] <;> split_ifs <;> rfl
-        · have hi' : m < i := lt_of_le_of_ne hi h
+        · have hi' : m < i := hi.lt_of_ne h
           refine ⟨var (i - 1), ?_⟩
           simp only [lift_var]; split_ifs <;> simp only [dsub_var] <;> split_ifs <;>
             first | rfl | (congr 1; omega)
       · rcases lt_or_ge m n with hm | hm
         · refine ⟨var m, ?_⟩
           simp only [lift_var]; split_ifs <;> simp only [dsub_var] <;> split_ifs <;> rfl
-        · have hm' : n < m := lt_of_le_of_ne hm (Ne.symm hmn)
+        · have hm' : n < m := hm.lt_of_ne hmn.symm
           refine ⟨var (m - 1), ?_⟩
           simp only [lift_var]; split_ifs <;> simp only [dsub_var] <;> split_ifs <;>
             (congr 1; omega)
@@ -249,9 +251,7 @@ lemma onto_lemma (t : Term) (i n : ℕ) (h : i ∉ dFV t) :
       simp only [mem_dFV_abs] at h
       obtain ⟨t₀, ht⟩ := ih (i + 1) (n + 1) h
       refine ⟨abs t₀, ?_⟩
-      rw [lift_abs, dsub_abs, lift_var]
-      simp only [Nat.not_lt_zero, ite_false]
-      exact congrArg abs ht
+      rw [lift_abs, dsub_abs, lift_var, ite_eq_right (Nat.not_lt_zero _), ht]
 
 /-- HOL `onto_lemma2`: the free indices of a term are bounded. -/
 lemma dFV_bounded (t : Term) : ∃ j, ∀ i ∈ dFV t, i < j := by
@@ -275,7 +275,7 @@ lemma dFV_bounded (t : Term) : ∃ j, ∀ i ∈ dFV t, i < j := by
 /-- HOL `dfresh_exists`: every de Bruijn term has a fresh index. -/
 lemma dfresh_exists (t : Term) : ∃ i, i ∉ dFV t := by
   obtain ⟨j, hj⟩ := dFV_bounded t
-  exact ⟨j, fun h => absurd (hj j h) (lt_irrefl j)⟩
+  exact ⟨j, fun h => lt_irrefl j (hj j h)⟩
 
 /-- **Lemma 6** (HOL `dABS_renamed`): if `i` is not free in `dABS t`, then `dABS t = dLAM i t₀`
 for some `t₀`. -/
@@ -316,10 +316,9 @@ lemma dsub_dsub_comm {a b : Term} {k l : ℕ} (hkl : k ≠ l) (hb : k ∉ dFV b)
   | var m =>
       simp only [dsub_var]
       rcases eq_or_ne m l with rfl | hml
-      · simp only [ite_true, Ne.symm hkl, ite_false, dsub_var, ite_true,
-          dsub_of_not_mem_dFV hb]
+      · simp only [ite_true, hkl.symm, ite_false, dsub_var, dsub_of_not_mem_dFV hb]
       · rcases eq_or_ne m k with rfl | hmk
-        · simp only [hml, ite_false, ite_true, dsub_var, ite_true, dsub_of_not_mem_dFV ha]
+        · simp only [hml, ite_false, ite_true, dsub_var, dsub_of_not_mem_dFV ha]
         · simp only [hml, hmk, ite_false, dsub_var]
   | app u₁ u₂ ih₁ ih₂ => simp only [dsub_app, ih₁ hkl hb ha, ih₂ hkl hb ha]
   | abs u ih =>
