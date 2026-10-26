@@ -144,8 +144,7 @@ lemma mem_dFV_lift (t : Term) (n j : ℕ) :
     j ∈ dFV (lift t n) ↔ (j < n ∧ j ∈ dFV t) ∨ (n < j ∧ j - 1 ∈ dFV t) := by
   induction t generalizing n j with
   | var i =>
-      by_cases h : i < n <;> simp only [lift_var, h, ite_true, ite_false, mem_dFV_var] <;>
-        constructor <;> intro hh <;> omega
+      grind [lift_var, mem_dFV_var]
   | app t u iht ihu =>
       simp only [lift_app, mem_dFV_app, iht, ihu]
       tauto
@@ -158,27 +157,18 @@ lemma mem_dFV_dsub (z : Term) (k : ℕ) (t : Term) (j : ℕ) :
     j ∈ dFV (dsub z k t) ↔ (j ∈ dFV t ∧ j ≠ k) ∨ (k ∈ dFV t ∧ j ∈ dFV z) := by
   induction t generalizing z k j with
   | var i =>
-      by_cases h : i = k <;> simp only [dsub_var, h, ite_true, ite_false, mem_dFV_var] <;>
-        constructor <;> intro hh <;> first | tauto | omega
+      grind [dsub_var, mem_dFV_var]
   | app t u iht ihu =>
       simp only [dsub_app, mem_dFV_app, iht, ihu]
       tauto
   | abs t ih =>
       simp only [dsub_abs, mem_dFV_abs, ih, mem_dFV_lift]
-      constructor
-      · rintro (⟨h1, h2⟩ | ⟨h1, h2⟩)
-        · exact Or.inl ⟨h1, by omega⟩
-        · rcases h2 with ⟨hlt, _⟩ | ⟨_, h4⟩
-          · omega
-          · exact Or.inr ⟨h1, by simpa using h4⟩
-      · rintro (⟨h1, h2⟩ | ⟨h1, h2⟩)
-        · exact Or.inl ⟨h1, by omega⟩
-        · exact Or.inr ⟨h1, Or.inr ⟨by omega, by simpa using h2⟩⟩
+      grind
 
 /-- Substituting for an index that does not occur free changes nothing. -/
 lemma dsub_of_not_mem_dFV {t : Term} {k : ℕ} (h : k ∉ dFV t) (z : Term) : dsub z k t = t := by
   induction t generalizing z k with
-  | var m => simp only [mem_dFV_var] at h; simp only [dsub_var]; split_ifs; rfl
+  | var m => grind [dsub_var, mem_dFV_var]
   | app t₁ t₂ ih₁ ih₂ =>
       simp only [mem_dFV_app, not_or] at h
       simp only [dsub_app, ih₁ h.1, ih₂ h.2]
@@ -229,19 +219,11 @@ lemma onto_lemma (t : Term) (i n : ℕ) (h : i ∉ dFV t) :
       simp only [mem_dFV_var] at h
       rcases eq_or_ne m n with rfl | hmn
       · rcases lt_or_ge i m with hi | hi
-        · refine ⟨var i, ?_⟩
-          simp only [lift_var]; split_ifs <;> simp only [dsub_var] <;> split_ifs <;> rfl
-        · have hi' : m < i := hi.lt_of_ne h
-          refine ⟨var (i - 1), ?_⟩
-          simp only [lift_var]; split_ifs <;> simp only [dsub_var] <;> split_ifs <;>
-            first | rfl | (congr 1; omega)
+        · exact ⟨var i, by grind [lift_var, dsub_var]⟩
+        · exact ⟨var (i - 1), by grind [lift_var, dsub_var]⟩
       · rcases lt_or_ge m n with hm | hm
-        · refine ⟨var m, ?_⟩
-          simp only [lift_var]; split_ifs <;> simp only [dsub_var] <;> split_ifs <;> rfl
-        · have hm' : n < m := hm.lt_of_ne hmn.symm
-          refine ⟨var (m - 1), ?_⟩
-          simp only [lift_var]; split_ifs <;> simp only [dsub_var] <;> split_ifs <;>
-            (congr 1; omega)
+        · exact ⟨var m, by grind [lift_var, dsub_var]⟩
+        · exact ⟨var (m - 1), by grind [lift_var, dsub_var]⟩
   | app t u iht ihu =>
       simp only [mem_dFV_app, not_or] at h
       obtain ⟨t₀, ht⟩ := iht i n h.1
@@ -256,21 +238,17 @@ lemma onto_lemma (t : Term) (i n : ℕ) (h : i ∉ dFV t) :
 /-- HOL `onto_lemma2`: the free indices of a term are bounded. -/
 lemma dFV_bounded (t : Term) : ∃ j, ∀ i ∈ dFV t, i < j := by
   induction t with
-  | var i => exact ⟨i + 1, by intro k hk; simp only [mem_dFV_var] at hk; omega⟩
+  | var i => exact ⟨i + 1, by grind [mem_dFV_var]⟩
   | app t u iht ihu =>
       obtain ⟨j₁, h₁⟩ := iht
       obtain ⟨j₂, h₂⟩ := ihu
       refine ⟨max j₁ j₂, fun k hk => ?_⟩
       simp only [mem_dFV_app] at hk
-      rcases hk with h | h
-      · have := h₁ k h; omega
-      · have := h₂ k h; omega
+      grind
   | abs t ih =>
       obtain ⟨j, hj⟩ := ih
       refine ⟨j, fun k hk => ?_⟩
-      simp only [mem_dFV_abs] at hk
-      have := hj (k + 1) hk
-      omega
+      grind [mem_dFV_abs]
 
 /-- HOL `dfresh_exists`: every de Bruijn term has a fresh index. -/
 lemma dfresh_exists (t : Term) : ∃ i, i ∉ dFV t := by
@@ -280,28 +258,20 @@ lemma dfresh_exists (t : Term) : ∃ i, i ∉ dFV t := by
 /-- **Lemma 6** (HOL `dABS_renamed`): if `i` is not free in `dABS t`, then `dABS t = dLAM i t₀`
 for some `t₀`. -/
 lemma dABS_renamed {t : Term} {i : ℕ} (h : i ∉ dFV (abs t)) : ∃ t₀, abs t = dLAM i t₀ := by
-  have h' : i + 1 ∉ dFV t := by simpa using h
-  obtain ⟨t₀, ht⟩ := onto_lemma t (i + 1) 0 h'
+  obtain ⟨t₀, ht⟩ := onto_lemma t (i + 1) 0 (by simpa using h)
   exact ⟨t₀, by rw [dLAM, ← ht]⟩
 
 /-- The free indices of a `dLAM`-abstraction (HOL `dFVs_dLAM`). -/
 lemma dFV_dLAM (i : ℕ) (t : Term) : dFV (dLAM i t) = (dFV t).erase i := by
   ext j
   simp only [dLAM, mem_dFV_abs, mem_dFV_dsub, mem_dFV_lift, mem_dFV_var, Finset.mem_erase]
-  constructor
-  · rintro (⟨h1, h2⟩ | ⟨h1, h2⟩)
-    · rcases h1 with ⟨hlt, _⟩ | ⟨_, h4⟩
-      · omega
-      · exact ⟨by omega, by simpa using h4⟩
-    · omega
-  · rintro ⟨h1, h2⟩
-    exact Or.inl ⟨Or.inr ⟨by omega, by simpa using h2⟩, by omega⟩
+  grind
 
 /-- Lifting commutes with substitution (the de Bruijn bookkeeping behind `dsub_dLAM`). -/
 lemma lift_dsub (z : Term) (n j : ℕ) (t : Term) :
     lift (dsub z j t) n = dsub (lift z n) (if j < n then j else j + 1) (lift t n) := by
   induction t generalizing z n j with
-  | var m => by_cases h : m = j <;> simp [h] <;> split_ifs <;> simp_all <;> omega
+  | var m => grind [lift_var, dsub_var]
   | app t u iht ihu => simp [iht, ihu]
   | abs t ih =>
       have hidx : (if j + 1 < n + 1 then j + 1 else j + 1 + 1)
