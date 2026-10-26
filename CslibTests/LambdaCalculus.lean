@@ -191,6 +191,21 @@ example : ¬ ((abs a (app (var b) (var a))) =α (abs b (app (var a) (var b)))) :
   rw [hl, hr] at hfv
   exact absurd hfv (by decide)
 
+-- Lemma 6.3: a swap with an unused atom is substitution up to `∼r`. In `a (λa. a)` the swap
+-- `(z a)` also replaces the bound `a`, giving `z (λz. z)` ...
+example : (app (var a) (abs a (var a))).swap z a = app (var z) (abs z (var z)) := by
+  rw [swap, permute, permute, permute, permute, Equiv.swap_apply_right]
+
+-- ... while `[a := z]` replaces only the free `a`, giving `z (λa. a)` ...
+example : (app (var a) (abs a (var a)))[a := var z] = app (var z) (abs a (var a)) := by
+  change (app (var a) (abs a (var a))).subst a (var z) = _
+  rw [subst, subst, subst, ite_eq_left rfl, ite_eq_left rfl]
+
+-- ... and the two results differ only in the name of a bound atom.
+example : AlphaEquivR ((app (var a) (abs a (var a))).swap z a)
+    ((app (var a) (abs a (var a)))[a := var z]) :=
+  alphaEquivR_swap_subst_var (by simp only [vars]; decide)
+
 -- The β-redex `(λa. a b) c` and its contractum `c b`, for the de Bruijn part below.
 abbrev redex : Term Atom := app M (var c)
 abbrev contractum : Term Atom := app (var c) (var b)
@@ -252,6 +267,17 @@ example : Beta (app (abs (app (var 0) (var 2))) (var 2)) (app (var 2) (var 1)) :
 -- Theorem 20 as a relation isomorphism, and Church-Rosser for `→β` on `Λα` transported along it.
 noncomputable example : BetaAlpha (Var := Atom) ≃r Beta := dbRelIso
 example : Relation.Confluent (BetaAlpha (Var := Atom)) := churchRosser_betaAlpha
+
+-- `dLAM` is not injective: `λa. a` and `λc. c` give the same de Bruijn term `λ. 0`.
+example : dLAM 0 (var 0) = abs (var 0) := by decide
+example : dLAM 2 (var 2) = abs (var 0) := by decide
+
+-- Definition 8: under a binder the swap `(a b)` acts through `inc`, which exchanges the indices
+-- `1` and `2`. So `λ. 1`, read `λx. a`, becomes `λ. 2`, read `λx. b` ...
+example : FinPerm.swap a b • abs (var 1) = abs (var 2) := by decide
+
+-- ... whereas swapping the indices `0` and `1` inside the binder would give `λ. 0`, the identity.
+example : abs (FinPerm.swap a b • var 1) = abs (var 0) := by decide
 
 end DeBruijn
 
