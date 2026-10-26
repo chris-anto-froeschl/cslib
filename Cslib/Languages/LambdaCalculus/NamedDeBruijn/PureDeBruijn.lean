@@ -10,14 +10,14 @@ public import Cslib.Languages.LambdaCalculus.Unscoped.Untyped.BetaReduction
 public import Mathlib.Data.Finset.Basic
 public import Mathlib.Data.Finset.Image
 
-/-! # de Bruijn
+/-! # Pure de Bruijn terms: `lift`, `sub` and `dLAM`
 
 Covers the material of the [Norrish2007a] Section 2.2 and the first half of Section 4.1.
 
-## The paper's `dB` versus Cslib's `Unscoped.Untyped.Term`
+## Implementation notes
 
 The paper's type `dB` (equation (2)) is the free algebra `ℕ + dB × dB + dB` with constructors
-`dV`, `dAPP`, `dABS`.  This is exactly `Cslib.LambdaCalculus.Unscoped.Untyped.Term`, with
+`dV`, `dAPP`, `dABS`. This is exactly `Cslib.LambdaCalculus.Unscoped.Untyped.Term`, with
 
 | Paper           | Cslib                                       |
 |-----------------|---------------------------------------------|
@@ -41,6 +41,7 @@ lemmas `lift_var`, `nsub_var`, ... are the defining equations in the shape used 
 
 * `Term.lift`, `Term.nsub`, `Term.dsub` : paper Figure 2 and Definition 4.
 * `Term.dFV` : the set of free indices of a de Bruijn term.
+* `Term.dbsize` : the number of nodes, the measure for induction over `dLAM`-terms.
 * `Term.dLAM` : **Definition 5**, abstraction over a particular index.
 * `DBeta'` : **Definition 7**, the β-reduction relation `→d'` of the intermediate formalism `dB'`.
 
@@ -48,6 +49,8 @@ lemmas `lift_var`, `nsub_var`, ... are the defining equations in the shape used 
 
 * `Term.onto_lemma`, `Term.dABS_renamed` : **Lemma 6**, every `dABS`-term is a `dLAM`-term over
   any sufficiently fresh index.
+* `Term.dFV_dLAM`, `Term.dsub_dLAM` : `dLAM i` removes `i` from the free indices and commutes
+  with substitution for other indices, as `LAM` does on `Λα`.
 
 ## References
 
