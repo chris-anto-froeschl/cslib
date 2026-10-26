@@ -69,7 +69,7 @@ def gincAtom (g : ℕ) (a : Atom) : Atom := if a.val < g then a else ⟨a.val + 
 def gdecAtom (g : ℕ) (a : Atom) : Atom := if a.val ≤ g then a else ⟨a.val - 1⟩
 
 /-- `gdecAtom g` undoes `gincAtom g`. -/
-lemma gdecAtom_gincAtom (g : ℕ) (a : Atom) : gdecAtom g (gincAtom g a) = a := by
+private lemma gdecAtom_gincAtom (g : ℕ) (a : Atom) : gdecAtom g (gincAtom g a) = a := by
   unfold gdecAtom gincAtom
   split_ifs <;> grind
 
@@ -78,7 +78,8 @@ lemma gincAtom_ne (g : ℕ) (a : Atom) : (gincAtom g a).val ≠ g := by
   grind [gincAtom]
 
 /-- `gincAtom g` undoes `gdecAtom g` on every atom other than the guard. -/
-lemma gincAtom_gdecAtom {g : ℕ} {a : Atom} (h : a.val ≠ g) : gincAtom g (gdecAtom g a) = a := by
+private lemma gincAtom_gdecAtom {g : ℕ} {a : Atom} (h : a.val ≠ g) :
+    gincAtom g (gdecAtom g a) = a := by
   obtain ⟨v⟩ := a
   unfold gdecAtom gincAtom
   split_ifs <;> grind
@@ -130,7 +131,7 @@ lemma incFun_zero_val (π : FinPerm) (v : ℕ) :
   split_ifs with h <;> first | exact h | rfl
 
 /-- `lift` on a variable is the guarded increment of atoms. -/
-lemma lift_var_eq (i n : ℕ) : lift (var i) n = var (gincAtom n (Atom.ofNat i)).val := by
+private lemma lift_var_eq (i n : ℕ) : lift (var i) n = var (gincAtom n (Atom.ofNat i)).val := by
   grind [lift_var, gincAtom, Atom.ofNat]
 
 /-- Incrementing the identity permutation gives the identity. -/
