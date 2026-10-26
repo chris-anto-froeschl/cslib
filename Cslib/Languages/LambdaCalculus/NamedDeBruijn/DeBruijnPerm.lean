@@ -15,22 +15,6 @@ This file formalises the paper's Section 3 (*Nominal Reasoning*) instantiated at
 pure de Bruijn terms, and the first part of Section 4.2 (*dB' vs λNα: Nominal Reasoning with
 Indices*), up to and including **Theorem 10**.
 
-## Implementation notes
-
-The paper represents a permutation as a list of pairs of strings (Definition 2), and therefore
-has to state the third nominal axiom of (4) extensionally. Cslib's nominal library instead uses
-`Cslib.Logic.Nominal.FinPerm`, the group of finitely supported bijections of `Atom`; the
-extensionality axiom of (4) is then automatic, and the nominal-set axioms of (4) are exactly the
-`MulAction FinPerm` laws.
-
-Atoms are (wrapped) natural numbers, so the bijection between "strings" and numbers used
-throughout Section 4 of the paper is `Atom.ofNat`/`Atom.val`:
-
-| Paper  | Cslib          |
-|--------|----------------|
-| `î`    | `Atom.ofNat i` |
-| `ŝ`    | `s.val`        |
-
 ## Main definitions
 
 * `Term.gincAtom` : the guarded increment `ginc` of an atom (HOL `ginc_def`).
@@ -46,6 +30,22 @@ throughout Section 4 of the paper is `Atom.ofNat`/`Atom.val`:
 * `Term.lift_dpm` : **Lemma 9** (permutations and `lift`).
 * `Term.dpm_dsub`, `Term.dpm_dLAM`, `DBeta'.equivariant` : **Theorem 10** (`sub` and `dLAM` have
   empty support; `→d'` is equivariant).
+
+## Implementation notes
+
+The paper represents a permutation as a list of pairs of strings (Definition 2), and therefore
+has to state the third nominal axiom of (4) extensionally. Cslib's nominal library instead uses
+`Cslib.Logic.Nominal.FinPerm`, the group of finitely supported bijections of `Atom`; the
+extensionality axiom of (4) is then automatic, and the nominal-set axioms of (4) are exactly the
+`MulAction FinPerm` laws.
+
+Atoms are (wrapped) natural numbers, so the bijection between "strings" and numbers used
+throughout Section 4 of the paper is `Atom.ofNat`/`Atom.val`:
+
+| Paper  | Cslib          |
+|--------|----------------|
+| `î`    | `Atom.ofNat i` |
+| `ŝ`    | `s.val`        |
 
 ## References
 

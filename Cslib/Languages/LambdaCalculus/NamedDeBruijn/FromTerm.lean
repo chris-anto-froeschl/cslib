@@ -16,21 +16,6 @@ public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.LiftingPermutation
 Theorems 11 and 12 of [Norrish2007a]: the bijection `f : Λα → dB`, and `f` turns `→β` on `Λα`
 into `→d'` on `dB`.
 
-## Implementation notes
-
-The paper's map `f : Λα → dB` is characterised by the equations (5)
-
-```
-f (VAR v)   = dV v̂
-f (APP M N) = dAPP (f M) (f N)
-f (LAM v M) = dLAM v̂ (f M)
-```
-
-The paper obtains `f` from Pitts' α-structural recursion principle [Pitts2006]. Here `fromTerm`
-is defined by structural recursion on raw terms, where the equations (5) hold by definition;
-`fromTerm_respects_alpha` shows that it respects `=α` (using `dLAM_rename_eq`, which rests on
-Theorem 10), and `toDB` is the induced map on `Λα`.
-
 ## Main definitions
 
 * `Lam` : the raw named syntax `Λvar` over `Atom`, with the `HasFresh Atom` instance.
@@ -47,6 +32,21 @@ Theorem 10), and `toDB` is the induced map on `Λα`.
   (HOL `fromTerm_onto`).
 * `dbEquiv` : **Theorem 11**, the bijection `Λα ≃ dB`.
 * `betaAlpha_iff_dbeta'` : **Theorem 12**, `M →β N ⇔ f M →d' f N` (HOL `dbeta'_eq_ccbeta`).
+
+## Implementation notes
+
+The paper's map `f : Λα → dB` is characterised by the equations (5)
+
+```
+f (VAR v)   = dV v̂
+f (APP M N) = dAPP (f M) (f N)
+f (LAM v M) = dLAM v̂ (f M)
+```
+
+The paper obtains `f` from Pitts' α-structural recursion principle [Pitts2006]. Here `fromTerm`
+is defined by structural recursion on raw terms, where the equations (5) hold by definition;
+`fromTerm_respects_alpha` shows that it respects `=α` (using `dLAM_rename_eq`, which rests on
+Theorem 10), and `toDB` is the induced map on `Λα`.
 
 ## References
 
