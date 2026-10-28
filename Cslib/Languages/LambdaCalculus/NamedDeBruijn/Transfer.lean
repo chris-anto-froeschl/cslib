@@ -42,6 +42,8 @@ turns it into confluence of `→β` on `Λα`, with no further λ-calculus reaso
   with `toDB_var`, `toDB_app`, `toDB_abs`.)
 * `TermAlpha.bvc_induction` : α-structural ("bound variable convention") induction for `Λα`,
   derived from the de Bruijn side rather than from Pitts' nominal theory.
+* `TermAlpha.subst_unique` : substitution on `Λα` is the only map satisfying the equations (6)
+  of [Norrish2006], so lifting it from raw terms gives the substitution of `λNα`.
 * `TermAlpha.normal_form_unique` : uniqueness of β-normal forms in `Λα`.
 
 ## Next milestones
@@ -203,6 +205,42 @@ lemma TermAlpha.bvc_induction {motive : TermAlpha Atom → Prop} (C : Finset Ato
             rw [heq]
             exact abs y _ hy.1 (ih _ (by omega))
   exact fun M => key (Term.dbsize (toDB M) + 1) M (Nat.lt_succ_self _)
+
+/-- Substitution on `Λα` is the only map satisfying the equations (6) of [Norrish2006] for
+`M ↦ M[v := N]`. Lifting raw substitution to the quotient (as for `λHoα`) and defining it on the
+quotient by recursion (as for `λNα`) thus give the same function, and hence the same
+`BetaAlpha`. -/
+lemma TermAlpha.subst_unique (v : Atom) (n : Named.Untyped.Term Atom)
+    (g : TermAlpha Atom → TermAlpha Atom)
+    (hvar : g (TermAlpha.var v) = ⟦n⟧α)
+    (hvar' : ∀ u, u ≠ v → g (TermAlpha.var u) = TermAlpha.var u)
+    (happ : ∀ M N, g (TermAlpha.app M N) = TermAlpha.app (g M) (g N))
+    (habs : ∀ u M, u ≠ v → u ∉ n.fv → g (TermAlpha.abs u M) = TermAlpha.abs u (g M)) :
+    g = fun M => TermAlpha.subst M v ⟦n⟧α := by
+  funext M
+  refine TermAlpha.bvc_induction (motive := fun M => g M = TermAlpha.subst M v ⟦n⟧α)
+    ({v} ∪ n.fv) ?_ ?_ ?_ M
+  · intro u
+    change _ = TermAlpha.subst ⟦Named.Untyped.Term.var u⟧α v ⟦n⟧α
+    rw [TermAlpha.subst_mk]
+    obtain rfl | huv := eq_or_ne u v
+    · rw [hvar]
+      simp [Named.Untyped.Term.subst]
+    · rw [hvar' u huv]
+      simp [Named.Untyped.Term.subst, huv, TermAlpha.var]
+  · intro M N ihM ihN
+    rw [happ, ihM, ihN]
+    induction M using TermAlpha.ind with | _ m =>
+    induction N using TermAlpha.ind with | _ k =>
+    rw [TermAlpha.app_mk, TermAlpha.subst_mk, TermAlpha.subst_mk, TermAlpha.subst_mk,
+      TermAlpha.app_mk]
+    simp [Named.Untyped.Term.subst]
+  · intro u M hu ih
+    simp only [Finset.mem_union, Finset.mem_singleton, not_or] at hu
+    rw [habs u M hu.1 hu.2, ih]
+    induction M using TermAlpha.ind with | _ m =>
+    rw [TermAlpha.subst_mk, TermAlpha.abs_mk, TermAlpha.abs_mk, TermAlpha.subst_mk]
+    simp [Named.Untyped.Term.subst, hu.1, hu.2]
 
 /-- Confluence of Nipkow's η-reduction on de Bruijn terms. -/
 proof_wanted Unscoped.Untyped.churchRosser_neta : Confluent NEta
