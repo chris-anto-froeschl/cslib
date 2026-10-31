@@ -10,14 +10,15 @@ public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.DeBruijnPerm
 
 /-! # Lifting is a permutation
 
-The first half of Section 4.3 of [Norrish2007a]: inside `dLAM`, lifting acts as a permutation,
-so an equivariant relation cannot tell a `dABS` term from its `dLAM` presentation.
+Inside `dLAM`, lifting acts as a permutation, so an equivariant relation cannot tell an `abs`
+term from its `dLAM` presentation [Norrish2007a].
 
 ## Main statements
 
-* `Term.dsub_eq_nsub` : **Lemma 13**.
-* `Term.lift_eq_dpm` : **Lemma 14**.
-* `Term.dABS_rules_are_dLAM_compatible` : **Theorem 15**.
+* `Term.dsub_eq_nsub` : `dsub` expressed through `nsub`, which relates `→d'` and `→d` redexes.
+* `Term.lift_eq_dpm` : on a term with bounded free indices, `lift` is a permutation.
+* `Term.dABS_rules_are_dLAM_compatible` : for an equivariant relation, congruence under `abs`
+  and under `dLAM` are equivalent.
 
 ## References
 
@@ -33,8 +34,8 @@ open Cslib.Logic.Nominal
 
 namespace Term
 
-/-- **Lemma 13** (HOL `sub_nsub`): for `n ≤ i`,
-`sub u i t = nsub u n (sub (dV n) (i+1) (lift t n))`. -/
+/-- Lemma 13 [Norrish2007a]: for `n ≤ i`,
+`dsub u i t = nsub u n (dsub (var n) (i+1) (lift t n))`. -/
 lemma dsub_eq_nsub (u : Term) (i n : ℕ) (t : Term) (h : n ≤ i) :
     dsub u i t = nsub u n (dsub (var n) (i + 1) (lift t n)) := by
   induction t generalizing u i n with
@@ -48,14 +49,14 @@ lemma dsub_eq_nsub (u : Term) (i n : ℕ) (t : Term) (h : n ≤ i) :
       simp only [lift_abs, dsub_abs, nsub_abs, lift_var, Nat.not_lt_zero, ite_false]
       exact congrArg abs (ih (lift u 0) (i + 1) (n + 1) (by omega))
 
-/-- Nipkow's relation `→d` does reduce `→d'`-redexes in the correct way (HOL `alt_dbeta_rule`):
-`dAPP (dLAM i t) u →d sub u i t`. Lemma 13 with `n = 0`. -/
+/-- Nipkow's relation `→d` does reduce `→d'`-redexes in the correct way:
+`app (dLAM i t) u →d dsub u i t`. `dsub_eq_nsub` with `n = 0`. -/
 lemma beta_dLAM_redex (i : ℕ) (t u : Term) : app (dLAM i t) u ⭢β dsub u i t := by
   rw [dsub_eq_nsub u i 0 t (Nat.zero_le i)]
   exact Beta.red _ _
 
-/-- Conversely, the de Bruijn redexes reduce under `→d'` (HOL `alt_dbeta'_rule`):
-`dAPP (dABS t) u →d' nsub u 0 t`. -/
+/-- Conversely, the de Bruijn redexes reduce under `→d'`:
+`app (abs t) u →d' nsub u 0 t`. -/
 lemma dbeta'_dABS_redex (t u : Term) : app (abs t) u →d' nsub u 0 t := by
   obtain ⟨i, hi⟩ := dfresh_exists (abs t)
   obtain ⟨t₀, ht⟩ := dABS_renamed hi
@@ -64,7 +65,7 @@ lemma dbeta'_dABS_redex (t u : Term) : app (abs t) u →d' nsub u 0 t := by
   exact DBeta'.red i t₀ u
 
 /-- The function underlying `liftingPerm lim n`: it maps `î` to `i+1` for `lim ≤ i ≤ n`, maps
-`n+1` back to `lim`, and fixes all other atoms (HOL `lifting_pm_behaves`). -/
+`n+1` back to `lim`, and fixes all other atoms. -/
 def liftingPermFun (lim n : ℕ) (a : Atom) : Atom :=
   if a.val < lim then a
   else if a.val ≤ n then ⟨a.val + 1⟩
@@ -92,8 +93,7 @@ lemma liftingPermInvFun_inv (lim n : ℕ) (a : Atom) :
   simp only [liftingPermFun, liftingPermInvFun]
   split_ifs <;> grind
 
-/-- The lifting permutation `lift-pm(lim, n)` (HOL `lifting_pm_def`), the cycle
-`lim → lim+1 → ... → n+1 → lim` on atoms. -/
+/-- The lifting permutation, the cycle `lim → lim+1 → ... → n+1 → lim` on atoms. -/
 def liftingPerm (lim n : ℕ) : FinPerm :=
   ⟨⟨liftingPermFun lim n, liftingPermInvFun lim n,
       fun a => liftingPermInvFun_inv lim n a, fun a => liftingPermFun_inv lim n a⟩,
@@ -105,7 +105,7 @@ def liftingPerm (lim n : ℕ) : FinPerm :=
       simp only [liftingPermFun]
       split_ifs <;> first | rfl | (exfalso; omega)⟩
 
-/-- HOL `lifting_pm_behaves`: the characterisation of the lifting permutation. -/
+/-- The characterisation of the lifting permutation. -/
 lemma liftingPerm_apply (lim n i : ℕ) :
     liftingPerm lim n (Atom.ofNat i) =
       if i < lim then Atom.ofNat i
@@ -113,8 +113,7 @@ lemma liftingPerm_apply (lim n i : ℕ) :
       else if i = n + 1 then Atom.ofNat lim
       else Atom.ofNat i := rfl
 
-/-- The `dABS` case of Lemma 14 (HOL `inc_pm0_lifting_pm`):
-`inc 0 (lifting_pm (m, n)) = lifting_pm (m+1, n+1)`. -/
+/-- The `abs` case of `lift_eq_dpm`: `inc 0 (liftingPerm m n) = liftingPerm (m+1) (n+1)`. -/
 lemma incPerm_zero_liftingPerm (m n : ℕ) :
     incPerm 0 (liftingPerm m n) = liftingPerm (m + 1) (n + 1) := by
   refine FinPerm.ext (fun a => ?_)
@@ -125,8 +124,8 @@ lemma incPerm_zero_liftingPerm (m n : ℕ) :
     liftingPermFun]
   split_ifs <;> apply Atom.ext <;> (try dsimp only at *) <;> omega
 
-/-- **Lemma 14** (Lifting is a permutation, HOL `lifts_are_specific_dpms`): if `n` is at least
-as large as the largest free index in `t`, then `lift t m = (lifting_pm (m, n)) · t`. -/
+/-- Lemma 14 [Norrish2007a]: if `n` is at least as large as the largest free index in `t`, then
+`lift t m = (liftingPerm m n) · t`. -/
 lemma lift_eq_dpm (t : Term) (n : ℕ) (h : ∀ i ∈ dFV t, i ≤ n) (m : ℕ) :
     lift t m = (liftingPerm m n) • t := by
   induction t generalizing m n with
@@ -159,8 +158,8 @@ lemma incPerm_zero_swap (i j : ℕ) :
     Equiv.swap_apply_def, Atom.ofNat]
   split_ifs <;> grind
 
-/-- Substituting `dV i` for `j` in a term in which `i` is not free is the transposition
-`[i ↔ j]` (HOL `fresh_dpm_sub`, `dLAM_alt_dpm`). -/
+/-- Substituting `var i` for `j` in a term in which `i` is not free is the transposition
+`[i ↔ j]`. -/
 lemma dsub_var_eq_dpm {t : Term} {i j : ℕ} (h : i ∉ dFV t) :
     dsub (var i) j t = (FinPerm.swap (Atom.ofNat i) (Atom.ofNat j)) • t := by
   induction t generalizing i j with
@@ -178,14 +177,14 @@ lemma dsub_var_eq_dpm {t : Term} {i j : ℕ} (h : i ∉ dFV t) :
       simp only [Nat.not_lt_zero, ite_false]
       exact congrArg abs (ih h)
 
-/-- Lemma 14 and `dsub_var_eq_dpm` together: `dLAM i t` is `dABS` of a permutation of `t` that
+/-- `lift_eq_dpm` and `dsub_var_eq_dpm` together: `dLAM i t` is `abs` of a permutation of `t` that
 depends only on `i` and on a bound `n` for the free indices of `t`. -/
 lemma dLAM_eq_abs_dpm (i n : ℕ) (t : Term) (h : ∀ k ∈ dFV t, k ≤ n) :
     dLAM i t =
       abs ((FinPerm.swap (Atom.ofNat 0) (Atom.ofNat (i + 1)) * liftingPerm 0 n) • t) := by
   rw [dLAM, dsub_var_eq_dpm (by grind [mem_dFV_lift]), lift_eq_dpm t n h 0, mul_smul]
 
-/-- Lifting is injective (HOL `lift_11`). -/
+/-- Lifting is injective. -/
 lemma lift_inj {t u : Term} {n : ℕ} (h : lift t n = lift u n) : t = u := by
   induction t generalizing u n with
   | var m =>
@@ -290,9 +289,8 @@ lemma dLAM_eq_dLAM_iff {i j : ℕ} {t u : Term} :
         · intro hk; exact hkj (congrArg Atom.val hk)
       rwa [dpm_dLAM, FinPerm.swap_apply_right] at hsupp
 
-/-- **Theorem 15** (Abstraction Congruences Correspond): if `R` is equivariant, then the
-`dABS`-congruence rule and the `dLAM`-congruence rule for `R` are equivalent
-(HOL `dABS_rules_are_dLAM_compatible`). -/
+/-- Theorem 15 [Norrish2007a]: if `R` is equivariant, then the `abs`-congruence rule and the
+`dLAM`-congruence rule for `R` are equivalent. -/
 theorem dABS_rules_are_dLAM_compatible (R : Term → Term → Prop)
     (hR : ∀ (π : FinPerm) (t u : Term), R (π • t) (π • u) ↔ R t u) :
     (∀ t u, R t u → R (abs t) (abs u)) ↔ (∀ i t u, R t u → R (dLAM i t) (dLAM i u)) := by
