@@ -18,8 +18,8 @@ This file provides the *named* side of the isomorphism of
 namely the type `Λα` of the paper's Section 2.1 and the reduction system `λNα` of its Table 1:
 the quotient of the raw syntax `Λvar` by α-equivalence, with β-reduction defined on the
 quotient. Substitution is lifted from `Λvar`, as for `λHoα`, where [Norrish2006] defines it on
-the quotient by recursion. `TermAlpha.subst_unique` (in `NamedDeBruijn/Transfer.lean`) shows
-that both give the same function.
+the quotient by recursion. `TermAlpha.subst_unique` (in `NamedDeBruijn/AlphaQuotientSubst.lean`)
+shows that both give the same function.
 
 Cslib already provides the raw syntax `Λvar` (`Named.Untyped.Term`), capture-avoiding
 substitution on it, α-equivalence (`Term.AlphaEquiv`) and the proofs
