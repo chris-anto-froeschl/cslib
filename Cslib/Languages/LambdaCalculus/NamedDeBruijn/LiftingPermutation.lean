@@ -54,7 +54,7 @@ lemma dsub_eq_nsub (u : Term) (i n : ℕ) (t : Term) (h : n ≤ i) :
       exact congrArg abs (ih (lift u 0) (i + 1) (n + 1) (by omega))
 
 /-- Nipkow's relation `→d` does reduce `→d'`-redexes in the correct way (HOL `alt_dbeta_rule`):
-`dAPP (dLAM i t) u →d sub u i t`.  Lemma 13 with `n = 0`. -/
+`dAPP (dLAM i t) u →d sub u i t`. Lemma 13 with `n = 0`. -/
 lemma beta_dLAM_redex (i : ℕ) (t u : Term) : app (dLAM i t) u ⭢β dsub u i t := by
   rw [dsub_eq_nsub u i 0 t (Nat.zero_le i)]
   exact Beta.red _ _

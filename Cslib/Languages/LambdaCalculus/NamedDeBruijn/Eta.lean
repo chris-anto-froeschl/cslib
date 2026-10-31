@@ -42,7 +42,7 @@ namespace Cslib.LambdaCalculus.Unscoped.Untyped
 
 open Cslib.Logic.Nominal
 
-/-- Nipkow's η-reduction `→ne` (paper, Section 4.4).  In the redex rule the choice of `u` is
+/-- Nipkow's η-reduction `→ne` (paper, Section 4.4). In the redex rule the choice of `u` is
 immaterial, see `Term.nsub_indep_of_not_mem_dFV`. -/
 inductive NEta : Term → Term → Prop where
   /-- Contraction of an η-redex, decrementing the free indices of `t`. -/
@@ -94,7 +94,7 @@ lemma lift_nsub {t : Term} {n : ℕ} (u : Term) (h : n ∉ dFV t) : lift (nsub u
       simp only [nsub_abs, lift_abs, ih _ h]
 
 /-- HOL `nipkow_eta_lemma`: if `i` is not free in `t`, then `nsub _ i t` does not depend on the
-term being substituted; it merely decrements the free indices of `t`.  Not used in proofs;
+term being substituted; it merely decrements the free indices of `t`. Not used in proofs;
 it makes the paper's remark on `→ne` precise. -/
 lemma nsub_indep_of_not_mem_dFV {t : Term} {i : ℕ} (h : i ∉ dFV t) (u v : Term) :
     nsub u i t = nsub v i t := by
@@ -186,7 +186,7 @@ lemma neta_dLAM_redex {t : Term} {i : ℕ} (h : i ∉ dFV t) :
   have hred := NEta.red (t := lift t 0) t (by grind [mem_dFV_lift])
   rwa [nsub_lift] at hred
 
-/-- `→e ⊆ →ne` (HOL `eta_neta`).  The congruence case is Theorem 15. -/
+/-- `→e ⊆ →ne` (HOL `eta_neta`). The congruence case is Theorem 15. -/
 lemma neta_of_deta {t u : Term} (h : DEta t u) : NEta t u := by
   induction h with
   | red i h0 => exact neta_dLAM_redex h0
@@ -196,7 +196,7 @@ lemma neta_of_deta {t u : Term} (h : DEta t u) : NEta t u := by
       exact (dABS_rules_are_dLAM_compatible NEta NEta.equivariant).mp
         (fun _ _ h => NEta.abs h) i _ _ ih
 
-/-- `→ne ⊆ →e` (HOL `neta_eta`).  The congruence case is Theorem 15. -/
+/-- `→ne ⊆ →e` (HOL `neta_eta`). The congruence case is Theorem 15. -/
 lemma deta_of_neta {t u : Term} (h : NEta t u) : DEta t u := by
   induction h with
   | red u h0 => exact deta_nABS_redex u h0
@@ -221,7 +221,7 @@ open Cslib.LambdaCalculus.Unscoped.Untyped
 open Cslib.LambdaCalculus.Named.Untyped (TermAlpha EtaAlpha)
 open scoped Cslib.LambdaCalculus.Named.Untyped Cslib.LambdaCalculus.Named.Untyped.TermAlpha
 
-/-- The "→" half of the η-analogue of Theorem 12: a rule induction on `→ηα`.  The side
+/-- The "→" half of the η-analogue of Theorem 12: a rule induction on `→ηα`. The side
 condition of the redex rule transfers along `mem_dFV_fromTerm`. -/
 lemma deta_of_etaAlpha {M N : TermAlpha Atom} (h : M →ηα N) : DEta (toDB M) (toDB N) := by
   induction h with

@@ -308,7 +308,7 @@ private lemma fromTerm_eq_app {m : Lam} {d₁ d₂ : Term} (h : fromTerm m = Ter
       exact ⟨m₁, m₂, rfl, h.1, h.2⟩
 
 /-- If `f M` is a `dLAM`-abstraction over `i`, then `M` is α-equivalent to an abstraction
-over `î`.  The "swapped" branch of `Term.dLAM_eq_dLAM_iff` is matched by
+over `î`. The "swapped" branch of `Term.dLAM_eq_dLAM_iff` is matched by
 `abs_swap_alphaEquiv` on the named side. -/
 private lemma fromTerm_eq_dLAM {m : Lam} {i : ℕ} {d : Term} (h : fromTerm m = Term.dLAM i d) :
     ∃ m₀ : Lam, m =α (.abs (Atom.ofNat i) m₀) ∧ fromTerm m₀ = d := by

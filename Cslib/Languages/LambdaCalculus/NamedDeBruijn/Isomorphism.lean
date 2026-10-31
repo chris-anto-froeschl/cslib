@@ -40,7 +40,7 @@ open Cslib.Logic.Nominal
 
 namespace Term
 
-/-- **Lemma 16** (HOL `dbeta_dbeta'`): `→d ⊆ →d'`.  The `abs` case is Theorem 15. -/
+/-- **Lemma 16** (HOL `dbeta_dbeta'`): `→d ⊆ →d'`. The `abs` case is Theorem 15. -/
 lemma dbeta'_of_beta {t u : Term} (h : t ⭢β u) : t →d' u := by
   induction h with
   | red t' s => exact dbeta'_dABS_redex t' s
@@ -78,7 +78,7 @@ lemma Beta.equivariant (π : FinPerm) (t u : Term) : (π • t) ⭢β (π • u)
   have h2 := Beta.dpm h π⁻¹
   rwa [inv_smul_smul, inv_smul_smul] at h2
 
-/-- **Lemma 18** (HOL `dbeta'_dbeta`): `→d' ⊆ →d`.  The `dLAM` case is Theorem 15 for `→d`. -/
+/-- **Lemma 18** (HOL `dbeta'_dbeta`): `→d' ⊆ →d`. The `dLAM` case is Theorem 15 for `→d`. -/
 lemma beta_of_dbeta' {t u : Term} (h : t →d' u) : t ⭢β u := by
   induction h with
   | red i t u => exact beta_dLAM_redex i t u

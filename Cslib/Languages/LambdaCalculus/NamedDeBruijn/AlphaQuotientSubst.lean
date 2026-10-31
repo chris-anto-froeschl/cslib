@@ -37,7 +37,7 @@ open Cslib.LambdaCalculus.Named.Untyped (TermAlpha)
 open scoped Cslib.LambdaCalculus.Named.Untyped Cslib.LambdaCalculus.Named.Untyped.TermAlpha
 
 /-- α-structural (BVC) induction for `Λα`: to prove a property of every `M`, it suffices to
-treat abstractions whose bound name avoids a fixed finite set `C`.  Derived from the de Bruijn
+treat abstractions whose bound name avoids a fixed finite set `C`. Derived from the de Bruijn
 side, by complete induction on `dbsize (f M)`. -/
 lemma TermAlpha.bvc_induction {motive : TermAlpha Atom → Prop} (C : Finset Atom)
     (var : ∀ x : Atom, motive (TermAlpha.var x))
