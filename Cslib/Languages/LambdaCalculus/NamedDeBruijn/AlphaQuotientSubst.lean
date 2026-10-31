@@ -10,16 +10,14 @@ public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.FromTerm
 
 /-! # Substitution on `Λα` is the substitution of `λNα`
 
-`TermAlpha.subst` lifts raw substitution to the quotient, as for `λHoα`, while [Norrish2006]
-defines substitution on the quotient by recursion. This file shows that both give the same
-function, so `BetaAlpha` is the β-reduction of `λNα`.
+`TermAlpha.subst` lifts raw substitution to the quotient, while [Norrish2006] defines it on the
+quotient by recursion. Both give the same function, so `BetaAlpha` is the β-reduction of `λNα`.
 
 ## Main statements
 
-* `TermAlpha.bvc_induction` : α-structural ("bound variable convention") induction for `Λα`,
-  derived from the de Bruijn side by complete induction on `dbsize (f M)`.
-* `TermAlpha.subst_unique` : substitution on `Λα` is the only map satisfying the equations (6)
-  of [Norrish2006].
+* `TermAlpha.bvc_induction` : induction on `Λα` with the bound name avoiding a finite set.
+* `TermAlpha.subst_unique` : substitution is the only map satisfying the equations (6) of
+  [Norrish2006].
 
 ## References
 
@@ -75,9 +73,7 @@ lemma TermAlpha.bvc_induction {motive : TermAlpha Atom → Prop} (C : Finset Ato
   exact fun M => key (Term.dbsize (toDB M) + 1) M (Nat.lt_succ_self _)
 
 /-- Substitution on `Λα` is the only map satisfying the equations (6) of [Norrish2006] for
-`M ↦ M[v := N]`. Lifting raw substitution to the quotient (as for `λHoα`) and defining it on the
-quotient by recursion (as for `λNα`) thus give the same function, and hence the same
-`BetaAlpha`. -/
+`M ↦ M[v := N]`. -/
 lemma TermAlpha.subst_unique (v : Atom) (n : Named.Untyped.Term Atom)
     (g : TermAlpha Atom → TermAlpha Atom)
     (hvar : g (TermAlpha.var v) = ⟦n⟧α)

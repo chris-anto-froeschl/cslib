@@ -9,21 +9,15 @@ module
 public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.FromTerm
 public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.LiftingPermutation
 
-/-! # `→d` and `→d'` coincide, and the isomorphism `dB ≅ λNα` (paper, Section 4.3)
+/-! # Isomorphism `dB ≅ λNα`
 
 The second half of Section 4.3 of [Norrish2007a], for β-reduction.
 
 ## Main statements
 
-* `Term.dbeta'_of_beta` : **Lemma 16**, `→d ⊆ →d'` (HOL `dbeta_dbeta'`).
-* `Term.dpm_nsub` : **Lemma 17**, `nsub` under a permutation; the index `i` is not permuted
-  (HOL `dpm_nsub`).
-* `Term.Beta.equivariant` : `→d` is equivariant, by rule induction using Lemma 17.
-* `Term.beta_of_dbeta'` : **Lemma 18**, `→d' ⊆ →d` (HOL `dbeta'_dbeta`).
-* `Term.dbeta'_iff_beta` : **Theorem 19**, `t →d' u ⇔ t →d u` (HOL `dbeta_dbeta'_eqn`).
-* `NamedDeBruijn.betaAlpha_iff_beta`, `NamedDeBruijn.isomorphism` : **Theorem 20**: `dB` with
-  `→d` and `λNα` with `→β` are isomorphic, as witnessed by `f` (HOL `dbeta_ccbeta_eqn`).
-* `NamedDeBruijn.dbRelIso` : Theorem 20 as a Mathlib relation isomorphism.
+* `Term.dbeta'_iff_beta` : **Theorem 19**, `t →d' u ⇔ t →d u`, from Lemmas 16 to 18.
+* `NamedDeBruijn.isomorphism`, `NamedDeBruijn.dbRelIso` : **Theorem 20**, `λNα` and `dB` with
+  `→d` are isomorphic via `f`.
 
 ## References
 

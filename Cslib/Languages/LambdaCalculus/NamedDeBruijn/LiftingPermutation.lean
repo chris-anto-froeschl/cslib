@@ -8,20 +8,15 @@ module
 
 public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.DeBruijnPerm
 
-/-! # Lifting is a permutation (paper, Section 4.3)
+/-! # Lifting is a permutation
 
-The first half of Section 4.3 of [Norrish2007a]: the lifting and the substitution inside `dLAM`
-are both permutation actions, so an equivariant relation cannot tell a `dABS` term from its
-presentation as a `dLAM` term.
+The first half of Section 4.3 of [Norrish2007a]: inside `dLAM`, lifting acts as a permutation,
+so an equivariant relation cannot tell a `dABS` term from its `dLAM` presentation.
 
 ## Main statements
 
-* `Term.dsub_eq_nsub` : **Lemma 13**, `n ≤ i → sub u i t = nsub u n (sub (dV n) (i+1) (lift t n))`.
-* `Term.beta_dLAM_redex` : Nipkow's `→d` reduces `→d'`-redexes correctly (HOL `alt_dbeta_rule`).
-* `Term.dbeta'_dABS_redex` : `→d'` reduces de Bruijn redexes correctly (HOL `alt_dbeta'_rule`).
-* `Term.liftingPerm`, `Term.liftingPerm_apply` : the lifting permutation and its behaviour
-  (HOL `lifting_pm_def`, `lifting_pm_behaves`).
-* `Term.lift_eq_dpm` : **Lemma 14** (HOL `lifts_are_specific_dpms`).
+* `Term.dsub_eq_nsub` : **Lemma 13**.
+* `Term.lift_eq_dpm` : **Lemma 14**.
 * `Term.dABS_rules_are_dLAM_compatible` : **Theorem 15**.
 
 ## References

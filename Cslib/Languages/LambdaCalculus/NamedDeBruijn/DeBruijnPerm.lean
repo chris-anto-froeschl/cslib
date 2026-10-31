@@ -9,43 +9,21 @@ module
 public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.PureDeBruijn
 public import Cslib.Logics.Nominal.Nominal
 
-/-! # de Bruijn terms are a nominal set (paper, Sections 3 and 4.2)
+/-! # Permutations on de Bruijn terms
 
-This file formalises the paper's Section 3 (*Nominal Reasoning*) instantiated at the type of
-pure de Bruijn terms, and the first part of Section 4.2 (*dB' vs λNα: Nominal Reasoning with
-Indices*), up to and including **Theorem 10**.
+The nominal structure of `dB` from Section 4.2 of [Norrish2007a], up to Theorem 10. Atoms are
+indices (`Atom.ofNat i` is the paper's `î`), and permutations are Cslib's `FinPerm`, so the
+nominal-set axioms (4) are the `MulAction` laws.
 
 ## Main definitions
 
-* `Term.gincAtom` : the guarded increment `ginc` of an atom (HOL `ginc_def`).
-* `Term.incPerm` : `inc_g`, the increment of a permutation (**Definition 8**, generalised to an
-  arbitrary guard as required for **Lemma 9**).
-* `Term.dpm` : the permutation action on de Bruijn terms (**Definition 8**), packaged as the
-  `MulAction FinPerm Term` instance, together with the `NomSet Term` instance whose support is
-  the set of free indices.
+* `Term.incPerm` : **Definition 8**, the increment `inc π` of a permutation.
+* `Term.dpm` : **Definition 8**, the action of permutations on `dB`.
 
 ## Main statements
 
-* `Term.supports_dFV` : the free indices of a term support it (Section 4.2).
-* `Term.lift_dpm` : **Lemma 9** (permutations and `lift`).
-* `Term.dpm_dsub`, `Term.dpm_dLAM`, `DBeta'.equivariant` : **Theorem 10** (`sub` and `dLAM` have
-  empty support; `→d'` is equivariant).
-
-## Implementation notes
-
-The paper represents a permutation as a list of pairs of strings (Definition 2), and therefore
-has to state the third nominal axiom of (4) extensionally. Cslib's nominal library instead uses
-`Cslib.Logic.Nominal.FinPerm`, the group of finitely supported bijections of `Atom`; the
-extensionality axiom of (4) is then automatic, and the nominal-set axioms of (4) are exactly the
-`MulAction FinPerm` laws.
-
-Atoms are (wrapped) natural numbers, so the bijection between "strings" and numbers used
-throughout Section 4 of the paper is `Atom.ofNat`/`Atom.val`:
-
-| Paper  | Cslib          |
-|--------|----------------|
-| `î`    | `Atom.ofNat i` |
-| `ŝ`    | `s.val`        |
+* `Term.lift_dpm` : **Lemma 9**, permutations commute with `lift` up to `inc`.
+* `Term.dpm_dsub`, `Term.dpm_dLAM`, `DBeta'.equivariant` : **Theorem 10**.
 
 ## References
 
@@ -104,12 +82,8 @@ lemma incFun_inv_incFun (g : ℕ) (π : FinPerm) (a : Atom) :
     incFun g π⁻¹ (incFun g π a) = a := by
   simpa only [inv_inv] using incFun_incFun_inv g π⁻¹ a
 
-/-- **Definition 8** [Norrish2007a], for an arbitrary guard `g`: the increment `inc g π` of a
-permutation. It shifts the entries of `π` the way `lift t g` shifts indices: entries below `g`
-stay, the others go up by one (HOL `inc_pm_def` applies `ginc g` to both atoms of every swap).
-The resulting permutation fixes the gap `g`, which `gincAtom g` never hits (`gincAtom_ne`). The
-paper's phrase "the index below which variables should not be touched" describes the entries,
-not this action. `incPerm 0` is the paper's `inc`. -/
+/-- **Definition 8** [Norrish2007a], generalised to a guard `g`: `inc g π` shifts the entries
+of `π` as `lift t g` shifts indices (HOL `inc_pm_def`). `incPerm 0` is the paper's `inc`. -/
 def incPerm (g : ℕ) (π : FinPerm) : FinPerm :=
   ⟨⟨incFun g π, incFun g π⁻¹, incFun_inv_incFun g π, incFun_incFun_inv g π⟩,
     (π.suppWitness.image (gincAtom g)) ∪ {⟨g⟩}, by
@@ -224,8 +198,7 @@ lemma mem_dFV_dpm (π : FinPerm) (t : Term) (i : ℕ) :
         simp only [Nat.add_one_ne_zero, ite_false, Nat.add_sub_cancel, hv]
 
 /-- The free indices of a de Bruijn term, as atoms, support it (Section 4.2 [Norrish2007a]; HOL
-`dpm_fresh`). HOL's `dpm_supp` also shows that they are the least support; that is not needed
-here. -/
+`dpm_fresh`). -/
 lemma supports_dFV (t : Term) : Supports ((dFV t).image Atom.ofNat) t := by
   intro π hπ
   induction t generalizing π with
@@ -264,8 +237,7 @@ lemma dFV_dpm (t : Term) (π : FinPerm) :
     exact ⟨(π (Atom.ofNat j)).val, ⟨j, hj, rfl⟩, Atom.val_ofNat _⟩
 
 /-- de Bruijn terms form a nominal set, with support the set of free indices (Section 4.2
-[Norrish2007a]). Not used by the current proofs, which define `f` on raw terms; kept for a future
-definition of `f` by Pitts' recursion, which needs it. -/
+[Norrish2007a]). Unused for now; a definition of `f` by Pitts' recursion would need it. -/
 instance : NomSet Term where
   toMulAction := inferInstance
   supp t := (dFV t).image Atom.ofNat

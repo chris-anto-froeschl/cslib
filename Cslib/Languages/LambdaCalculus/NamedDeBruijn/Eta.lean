@@ -8,26 +8,20 @@ module
 
 public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.Isomorphism
 
-/-! # Bonus: η-reduction (paper, Section 4.4)
+/-! # η-reduction
 
-Section 4.4 of [Norrish2007a] repeats Section 4.3 for η-reduction. By Theorem 15 only the
-redex rules and the equivariance of the two relations need proofs.
+Section 4.4 of [Norrish2007a] repeats Section 4.3 for η-reduction. By Theorem 15 only the redex
+rules and equivariance need new proofs.
 
 ## Main definitions
 
-* `NEta` : Nipkow's η-reduction `→ne`, with redex rule
-  `0 ∉ dFV t → dABS (dAPP t (dV 0)) →ne nsub u 0 t`; `nsub` only decrements the free indices
-  of `t`, so `u` is immaterial (`Term.nsub_indep_of_not_mem_dFV`).
-* `DEta` : the η-reduction `→e` in the style of `→d'`, with redex rule
-  `i ∉ dFV t → dLAM i (dAPP t (dV i)) →e t`.
+* `NEta` : Nipkow's η-reduction `→ne` on `dB`.
+* `DEta` : η-reduction `→e` in the style of `→d'`.
 
 ## Main statements
 
-* `Term.nsub_lift`, `Term.lift_nsub` : the two Nipkow-style lemmas quoted in Section 4.4.
-* `Term.deta_iff_neta` : `→e` and `→ne` coincide (HOL `neta_eq_eta`).
-* `NamedDeBruijn.etaAlpha_iff_deta` : η-reduction on `Λα` corresponds to `→e` under `f`
-  (HOL `eta_eq_lam_eta`).
-* `NamedDeBruijn.etaAlpha_iff_neta` : the η-analogue of Theorem 20, with Nipkow's `→ne`.
+* `Term.deta_iff_neta` : `→e` and `→ne` coincide.
+* `NamedDeBruijn.etaAlpha_iff_neta` : the η-analogue of Theorem 20.
 
 ## References
 
@@ -94,8 +88,7 @@ lemma lift_nsub {t : Term} {n : ℕ} (u : Term) (h : n ∉ dFV t) : lift (nsub u
       simp only [nsub_abs, lift_abs, ih _ h]
 
 /-- HOL `nipkow_eta_lemma`: if `i` is not free in `t`, then `nsub _ i t` does not depend on the
-term being substituted; it merely decrements the free indices of `t`. Not used in proofs;
-it makes the paper's remark on `→ne` precise. -/
+term being substituted; it only decrements the free indices of `t`. -/
 lemma nsub_indep_of_not_mem_dFV {t : Term} {i : ℕ} (h : i ∉ dFV t) (u v : Term) :
     nsub u i t = nsub v i t := by
   induction t generalizing u v i with

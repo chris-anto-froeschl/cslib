@@ -9,16 +9,14 @@ module
 public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.Isomorphism
 public import Cslib.Languages.LambdaCalculus.Unscoped.Untyped.ChurchRosser
 
-/-! # Using the isomorphism: transporting results from `dB` to `Λα`
+/-! # Church-Rosser for `λNα`, transported from `dB`
 
-An isomorphism of reduction systems (Theorem 20, `NamedDeBruijn.isomorphism`) transports every
-property stated in terms of the relation.
-Here it turns the Church–Rosser theorem for `→d` on `dB` (`Unscoped.Untyped.churchRosser_beta`) into
-the Church–Rosser theorem for `→β` on `Λα`.
+Theorem 20 (`NamedDeBruijn.dbRelIso`) transports the Church-Rosser theorem for `→d`
+(`Unscoped.Untyped.churchRosser_beta`) to `→β` on `Λα`.
 
 ## Main statements
 
-* `churchRosser_betaAlpha` : the Church–Rosser theorem for `λNα`, transported along `f`.
+* `churchRosser_betaAlpha` : the Church-Rosser theorem for `λNα`.
 * `TermAlpha.normal_form_unique` : uniqueness of β-normal forms in `Λα`.
 -/
 

@@ -8,49 +8,25 @@ module
 
 public import Cslib.Languages.LambdaCalculus.Named.Untyped.AlphaEquivProperties
 
-/-! # The α-quotiented λ-calculus `Λα` and the reduction system `λNα`
+/-! # The α-quotient `Λα` and the reduction system `λNα`
 
-This file provides the *named* side of the isomorphism of
-
-* Michael Norrish and René Vestergaard, *Proof Pearl: de Bruijn Terms Really Do Work*,
-  TPHOLs 2007,
-
-namely the type `Λα` of the paper's Section 2.1 and the reduction system `λNα` of its Table 1:
-the quotient of the raw syntax `Λvar` by α-equivalence, with β-reduction defined on the
-quotient. Substitution is lifted from `Λvar`, as for `λHoα`, where [Norrish2006] defines it on
-the quotient by recursion. `TermAlpha.subst_unique` (in `NamedDeBruijn/AlphaQuotientSubst.lean`)
-shows that both give the same function.
-
-Cslib already provides the raw syntax `Λvar` (`Named.Untyped.Term`), capture-avoiding
-substitution on it, α-equivalence (`Term.AlphaEquiv`) and the proofs
-that α-equivalence is an equivalence relation and is respected by substitution. What is added
-here is only the quotient packaging:
-
-| Paper                | Cslib                    |
-|----------------------|--------------------------|
-| `Λvar`               | `Term Var`               |
-| `=α`                 | `Term.AlphaEquiv`        |
-| `Λα`                 | `TermAlpha Var`          |
-| `VAR v`              | `TermAlpha.var v`        |
-| `APP M N`            | `TermAlpha.app M N`      |
-| `LAM v M`            | `TermAlpha.abs v M`      |
-| `M[v := N]`          | `TermAlpha.subst M v N`  |
-| `→β` of `λNα`        | `BetaAlpha`              |
-| `→η` of `λNα`        | `EtaAlpha`               |
+The named side of the isomorphism of [Norrish2007a]: raw terms quotiented by `=α` (Section 2.1)
+with β- and η-reduction on the quotient (Table 1). Substitution is lifted from raw terms, as for
+`λHoα`; `TermAlpha.subst_unique` shows that this agrees with the recursive definition of
+[Norrish2006].
 
 ## Main definitions
 
-* `Term.alphaSetoid`, `TermAlpha` : the type `Λα`; `TermAlpha.mk` (notation `⟦m⟧α`) takes a raw
-  term to its class.
-* `TermAlpha.var`, `TermAlpha.app`, `TermAlpha.abs`, `TermAlpha.subst` : the operations of `Λα`,
-  lifted from `Λvar` through the quotient. `TermAlpha.abs` is not injective.
-* `BetaAlpha` : β-reduction of `λNα`, defined directly at the quotient level.
-* `EtaAlpha` : η-reduction of `λNα` (Section 4.4 of the paper).
+* `TermAlpha` : the type `Λα`, with `⟦m⟧α` the class of `m` and `TermAlpha.var`, `app`, `abs`,
+  `subst` lifted from raw terms.
+* `BetaAlpha`, `EtaAlpha` : β- and η-reduction of `λNα`.
 
 ## References
 
 * [Michael Norrish and René Vestergaard, *Proof Pearl: de Bruijn Terms Really Do
   Work*][Norrish2007a]
+* [Michael Norrish, *Mechanising λ-calculus using a classical first order theory of terms with
+  permutations*][Norrish2006]
 -/
 
 @[expose] public section
@@ -119,8 +95,7 @@ lemma subst_mk (m n : Term Var) (x : Var) :
 end TermAlpha
 
 /-- β-reduction of `λNα` (Table 1 [Norrish2007a]), on the α-quotiented type. The paper takes
-its rules as known; these are the usual ones, as in HOL's `compat_closure beta`. Its de Bruijn
-counterpart is Definition 7 (`DBeta'`), and Theorem 12 says that `f` maps one onto the other. -/
+its rules as known; these are the usual ones (HOL `compat_closure beta`). -/
 inductive BetaAlpha : TermAlpha Var → TermAlpha Var → Prop where
   /-- Contraction of a β-redex. -/
   | red (x : Var) (M N : TermAlpha Var) :

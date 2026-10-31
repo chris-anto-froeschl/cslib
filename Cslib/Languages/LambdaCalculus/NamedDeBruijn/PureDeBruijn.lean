@@ -12,45 +12,19 @@ public import Mathlib.Data.Finset.Image
 
 /-! # Pure de Bruijn terms: `lift`, `sub` and `dLAM`
 
-Covers the material of the [Norrish2007a] Section 2.2 and the first half of Section 4.1.
+Section 2.2 and the first half of Section 4.1 of [Norrish2007a]. The type `dB` is Cslib's
+`Unscoped.Untyped.Term` (`dV`, `dAPP`, `dABS` are `var`, `app`, `abs`), and `→d` is its `Beta`.
 
 ## Main definitions
 
-* `Term.lift`, `Term.nsub`, `Term.dsub` : paper Figure 2 and Definition 4.
-* `Term.dFV` : the set of free indices of a de Bruijn term.
-* `Term.dbsize` : the number of nodes, the measure for induction over `dLAM`-terms.
-* `Term.dLAM` : **Definition 5**, abstraction over a particular index.
-* `DBeta'` : **Definition 7**, the β-reduction relation `→d'` of the intermediate formalism `dB'`.
+* `Term.lift`, `Term.nsub`, `Term.dsub` : Figure 2 and **Definition 4** (the paper's `sub`),
+  aliases of `Term.incre 1`, `Term.sub` and `Term.subst` with the paper's argument order.
+* `Term.dLAM` : **Definition 5**, abstraction over the index `i`.
+* `DBeta'` : **Definition 7**, the reduction `→d'` of `dB'`.
 
 ## Main statements
 
-* `Term.onto_lemma`, `Term.dABS_renamed` : **Lemma 6**, every `dABS`-term is a `dLAM`-term over
-  any sufficiently fresh index.
-* `Term.dFV_dLAM`, `Term.dsub_dLAM` : `dLAM i` removes `i` from the free indices and commutes
-  with substitution for other indices, as `LAM` does on `Λα`.
-
-## Implementation notes
-
-The paper's type `dB` (equation (2)) is the free algebra `ℕ + dB × dB + dB` with constructors
-`dV`, `dAPP`, `dABS`. This is exactly `Cslib.LambdaCalculus.Unscoped.Untyped.Term`, with
-
-| Paper           | Cslib                                       |
-|-----------------|---------------------------------------------|
-| `dV i`          | `Term.var i`                                |
-| `dAPP t u`      | `Term.app t u`                              |
-| `dABS t`        | `Term.abs t`                                |
-| `lift t k`      | `Term.lift t k` (`= Term.incre 1 k t`)      |
-| `nsub z k t`    | `Term.nsub z k t` (`= Term.sub t k z`)      |
-| `sub z k t`     | `Term.dsub z k t` (`= Term.subst k z t`)    |
-| `dFV t`         | `Term.dFV t`                                |
-| `dLAM i t`      | `Term.dLAM i t`                             |
-| `→d`  (Def. 1)  | `Beta` (`Unscoped.Untyped.BetaReduction`)   |
-| `→d'` (Def. 7)  | `DBeta'`                                    |
-
-The two functions of Nipkow's formalisation (the paper's Figure 2) and the paper's "clean"
-substitution (Definition 4) are already present in Cslib under different names; the
-abbreviations `lift`, `nsub` and `dsub` introduced below are definitional aliases, and the
-lemmas `lift_var`, `nsub_var`, ... are the defining equations in the shape used by the paper.
+* `Term.dABS_renamed` : **Lemma 6**, every `dABS` term is a `dLAM` term over any fresh index.
 
 ## References
 

@@ -11,42 +11,26 @@ public import Cslib.Languages.LambdaCalculus.Named.Untyped.AlphaEquivVariants.Sw
 public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.DeBruijnPerm
 public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.LiftingPermutation
 
-/-! # The bijection between `Λα` and `dB` (paper, Section 4.2)
+/-! # The bijection between `Λα` and `dB`
 
-Theorems 11 and 12 of [Norrish2007a]: the bijection `f : Λα → dB`, and `f` turns `→β` on `Λα`
-into `→d'` on `dB`.
+Theorems 11 and 12 of [Norrish2007a]: the map `f : Λα → dB` of equation (5) is a bijection, and
+it turns `→β` into `→d'`.
 
 ## Main definitions
 
-* `Lam` : the raw named syntax `Λvar` over `Atom`, with the `HasFresh Atom` instance.
-* `fromTerm` : the map `f` of equation (5) on raw terms.
-* `toDB` : the induced map `f : Λα → dB`.
-* `dbEquiv` : `f` as an equivalence `Λα ≃ dB` (Theorem 11).
+* `fromTerm` : `f` on raw terms; `toDB` : the induced map on `Λα`.
+* `dbEquiv` : **Theorem 11**, `f` as an equivalence `Λα ≃ dB`.
 
 ## Main statements
 
-* `fromTerm_dsub` : `f (M[v := N]) = sub (f N) v̂ (f M)` (HOL `fromTerm_subst`), the substitution
-  lemma on which Theorem 12 rests.
-* `fromTerm_alphaEquiv_iff` : `f M = f N ↔ M =α N` (injectivity, HOL `fromTerm_11`).
-* `fromTerm_surjective` : surjectivity, by complete induction on the size of the de Bruijn term
-  (HOL `fromTerm_onto`).
-* `dbEquiv` : **Theorem 11**, the bijection `Λα ≃ dB`.
-* `betaAlpha_iff_dbeta'` : **Theorem 12**, `M →β N ⇔ f M →d' f N` (HOL `dbeta'_eq_ccbeta`).
+* `fromTerm_dsub` : `f` turns substitution into `sub`.
+* `betaAlpha_iff_dbeta'` : **Theorem 12**, `M →β N ⇔ f M →d' f N`.
 
 ## Implementation notes
 
-The paper's map `f : Λα → dB` is characterised by the equations (5)
-
-```
-f (VAR v)   = dV v̂
-f (APP M N) = dAPP (f M) (f N)
-f (LAM v M) = dLAM v̂ (f M)
-```
-
-The paper obtains `f` from Pitts' α-structural recursion principle [Pitts2006]. Here `fromTerm`
-is defined by structural recursion on raw terms, where the equations (5) hold by definition;
-`fromTerm_respects_alpha` shows that it respects `=α` (using `dLAM_rename_eq`, which rests on
-Theorem 10), and `toDB` is the induced map on `Λα`.
+The paper obtains `f` by Pitts' α-structural recursion [Pitts2006]. Here `fromTerm` is defined
+by structural recursion on raw terms, where the equations (5) hold by definition, and
+`fromTerm_respects_alpha` shows that it respects `=α`.
 
 ## References
 
