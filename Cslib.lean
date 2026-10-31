@@ -252,16 +252,15 @@ public import Cslib.Languages.LambdaCalculus.Named.Untyped.AlphaEquivVariants.Eq
 public import Cslib.Languages.LambdaCalculus.Named.Untyped.AlphaEquivVariants.Swap
 public import Cslib.Languages.LambdaCalculus.Named.Untyped.AlphaEquivVariants.SwapSubst
 public import Cslib.Languages.LambdaCalculus.Named.Untyped.AlphaQuotient
+public import Cslib.Languages.LambdaCalculus.Named.Untyped.AlphaQuotientProperties
 public import Cslib.Languages.LambdaCalculus.Named.Untyped.Basic
 public import Cslib.Languages.LambdaCalculus.Named.Untyped.RenameProperties
-public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.AlphaQuotientSubst
 public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.DeBruijnPerm
 public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.Eta
 public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.FromTerm
 public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.Isomorphism
 public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.LiftingPermutation
 public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.PureDeBruijn
-public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.Transfer
 public import Cslib.Languages.LambdaCalculus.Unscoped.Untyped.BetaReduction
 public import Cslib.Languages.LambdaCalculus.Unscoped.Untyped.ChurchRosser
 public import Cslib.Languages.LambdaCalculus.Unscoped.Untyped.DeBruijnSyntax

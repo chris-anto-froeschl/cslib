@@ -9,7 +9,7 @@ import Cslib.Languages.LambdaCalculus.Named.Untyped.RenameProperties
 import Cslib.Languages.LambdaCalculus.Named.Untyped.AlphaEquivProperties
 import Cslib.Languages.LambdaCalculus.Named.Untyped.AlphaEquivVariants.Equalities
 import Cslib.Languages.LambdaCalculus.NamedDeBruijn.Isomorphism
-import Cslib.Languages.LambdaCalculus.NamedDeBruijn.Transfer
+import Cslib.Languages.LambdaCalculus.Named.Untyped.AlphaQuotientProperties
 
 /-! # λ-calculus
 
@@ -216,7 +216,7 @@ section DeBruijn
 
 open Cslib.LambdaCalculus.Unscoped.Untyped Cslib.LambdaCalculus.Unscoped.Untyped.Term
 open Cslib.LambdaCalculus.NamedDeBruijn
-open Cslib.LambdaCalculus.Named.Untyped (TermAlpha BetaAlpha)
+open Cslib.LambdaCalculus.Named.Untyped (TermAlpha BetaAlpha churchRosser_betaAlpha)
 open scoped Cslib.LambdaCalculus.Named.Untyped.TermAlpha
 
 -- `f` (`fromTerm`) sends `M = λa. a b` to `λ. 0 2`: the bound atom becomes index 0, the free `b`
