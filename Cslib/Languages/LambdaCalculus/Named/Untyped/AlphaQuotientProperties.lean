@@ -18,8 +18,8 @@ de Bruijn side imports it.
 ## Main statements
 
 * `TermAlpha.bvc_induction` : induction on `Λα` with the bound name avoiding a finite set.
-* `TermAlpha.subst_unique` : substitution on `Λα` is determined by its equations (6) in
-  [Norrish2006], so lifting it from raw terms gives the usual substitution on the quotient.
+* `TermAlpha.subst_unique` : substitution on `Λα` is the only function satisfying the usual
+  recursive equations [Norrish2006], so lifting it from raw terms loses nothing.
 * `churchRosser_betaAlpha` : the Church-Rosser theorem for β-reduction on `Λα`.
 * `TermAlpha.normal_form_unique` : uniqueness of β-normal forms.
 
@@ -77,8 +77,8 @@ lemma TermAlpha.bvc_induction {motive : TermAlpha Atom → Prop} (C : Finset Ato
             exact abs y _ hy.1 (ih _ (by omega))
   exact fun M => key (Unscoped.Untyped.Term.dbsize (toDB M) + 1) M (Nat.lt_succ_self _)
 
-/-- Substitution on `Λα` is the only map satisfying the equations (6) of [Norrish2006] for
-`M ↦ M[v := N]`. -/
+/-- Substitution on `Λα` is the only map satisfying the recursive equations of `M ↦ M[v := N]`,
+with the bound variable avoiding `v` and the free variables of `N` [Norrish2006]. -/
 lemma TermAlpha.subst_unique (v : Atom) (n : Named.Untyped.Term Atom)
     (g : TermAlpha Atom → TermAlpha Atom)
     (hvar : g (TermAlpha.var v) = ⟦n⟧α)
@@ -111,8 +111,8 @@ lemma TermAlpha.subst_unique (v : Atom) (n : Named.Untyped.Term Atom)
     rw [TermAlpha.subst_mk, TermAlpha.abs_mk, TermAlpha.abs_mk, TermAlpha.subst_mk]
     simp [Named.Untyped.Term.subst, hu.1, hu.2]
 
-/-- Confluence transports backwards along an isomorphism of reduction systems (paper,
-equation (3)): push both reduction paths forwards, join them, and pull the join back. -/
+/-- Confluence transports backwards along an isomorphism of reduction systems: push both
+reduction paths forwards, join them, and pull the join back. -/
 private lemma confluent_of_relIso {X Y : Type*} {r : X → X → Prop} {s : Y → Y → Prop}
     (e : r ≃r s) (hs : Confluent s) : Confluent r := by
   have back {x y : Y} (h : ReflTransGen s x y) : ReflTransGen r (e.symm x) (e.symm y) :=
@@ -122,12 +122,12 @@ private lemma confluent_of_relIso {X Y : Type*} {r : X → X → Prop} {s : Y �
     hs (hxy.lift e fun _ _ => e.map_rel_iff.mpr) (hxz.lift e fun _ _ => e.map_rel_iff.mpr)
   exact ⟨e.symm w, by simpa using back hyw, by simpa using back hzw⟩
 
-/-- The Church–Rosser theorem for `λNα`, transported from `churchRosser_beta` on de Bruijn terms
-along `f` (Theorem 20). -/
+/-- The Church-Rosser theorem for β-reduction on `Λα`, transported from `churchRosser_beta` on
+de Bruijn terms along `dbRelIso`. -/
 lemma churchRosser_betaAlpha : Confluent (BetaAlpha (Var := Atom)) :=
   confluent_of_relIso dbRelIso Unscoped.Untyped.churchRosser_beta
 
-/-- β-normal forms in `λNα` are unique. -/
+/-- β-normal forms in `Λα` are unique. -/
 lemma TermAlpha.normal_form_unique {M N₁ N₂ : TermAlpha Atom}
     (h₁ : ReflTransGen BetaAlpha M N₁) (h₂ : ReflTransGen BetaAlpha M N₂)
     (hn₁ : Normal BetaAlpha N₁) (hn₂ : Normal BetaAlpha N₂) : N₁ = N₂ := by
