@@ -9,28 +9,21 @@ module
 public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.FromTerm
 public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.LiftingPermutation
 
-/-! # `→d` and `→d'` coincide, and the isomorphism `dB ≅ λNα` (paper, Sections 4.3 and 4.4)
+/-! # `→d` and `→d'` coincide, and the isomorphism `dB ≅ λNα` (paper, Section 4.3)
 
-This file completes the formalisation of
-
-* Michael Norrish and René Vestergaard, *Proof Pearl: de Bruijn Terms Really Do Work*,
-  TPHOLs 2007
-
-for β-reduction: Section 4.3 (*The Homomorphism between `dB` and `dB'`*), culminating in
-**Theorem 19** (`→d` and `→d'` are the same relation) and **Theorem 20** (the isomorphism
-between `dB` and `λNα`).
+The second half of Section 4.3 of [Norrish2007a], for β-reduction.
 
 ## Main statements
 
-* `Term.dbeta'_of_beta` : **Lemma 16**, `→d ⊆ →d'`.
-* `Term.dpm_nsub` : **Lemma 17**, the "rather incomprehensible" behaviour of `nsub` under a
-  permutation; note the odd way in which the permutation `π` does not affect the index `i`.
+* `Term.dbeta'_of_beta` : **Lemma 16**, `→d ⊆ →d'` (HOL `dbeta_dbeta'`).
+* `Term.dpm_nsub` : **Lemma 17**, `nsub` under a permutation; the index `i` is not permuted
+  (HOL `dpm_nsub`).
 * `Term.Beta.equivariant` : `→d` is equivariant, by rule induction using Lemma 17.
-* `Term.beta_of_dbeta'` : **Lemma 18**, `→d' ⊆ →d`.
-* `Term.dbeta'_iff_beta` : **Theorem 19**, `t →d' u ⇔ t →d u`.
-* `NamedDeBruijn.betaAlpha_iff_beta`, `NamedDeBruijn.isomorphism` : **Theorem 20**,
-  the types `dB` and `λNα`, with their respective reduction relations `→d` and `→β`, are
-  isomorphic, as witnessed by the bijection `f`.
+* `Term.beta_of_dbeta'` : **Lemma 18**, `→d' ⊆ →d` (HOL `dbeta'_dbeta`).
+* `Term.dbeta'_iff_beta` : **Theorem 19**, `t →d' u ⇔ t →d u` (HOL `dbeta_dbeta'_eqn`).
+* `NamedDeBruijn.betaAlpha_iff_beta`, `NamedDeBruijn.isomorphism` : **Theorem 20**: `dB` with
+  `→d` and `λNα` with `→β` are isomorphic, as witnessed by `f` (HOL `dbeta_ccbeta_eqn`).
+* `NamedDeBruijn.dbRelIso` : Theorem 20 as a Mathlib relation isomorphism.
 
 ## References
 
@@ -47,8 +40,8 @@ open Cslib.Logic.Nominal
 
 namespace Term
 
-/-- **Lemma 16**: `→d ⊆ →d'`.  The `abs` case is Theorem 15. -/
-lemma dbeta'_of_beta {t u : Term} (h : Beta t u) : DBeta' t u := by
+/-- **Lemma 16** (HOL `dbeta_dbeta'`): `→d ⊆ →d'`.  The `abs` case is Theorem 15. -/
+lemma dbeta'_of_beta {t u : Term} (h : t ⭢β u) : t →d' u := by
   induction h with
   | red t' s => exact dbeta'_dABS_redex t' s
   | appL _ ih => exact DBeta'.appL _ ih
@@ -62,41 +55,14 @@ lemma dpm_nsub (π : FinPerm) (t : Term) (i : ℕ) (u : Term) :
     π • (nsub t i u) = nsub (π • t) i ((incPerm i π) • u) := by
   induction u generalizing π t i with
   | var m =>
-      rcases eq_or_ne m i with rfl | hmi
-      · have h : incFun m π (Atom.ofNat m) = Atom.ofNat m := by
-          simp [incFun, Atom.ofNat]
-        simp only [nsub_var, Nat.lt_irrefl, ite_false, ite_true, dpm_var, incPerm_apply, h]
-        simp
-      · set d : ℕ := if m < i then m else m - 1 with hd
-        have hdec : gdecAtom i (Atom.ofNat m) = Atom.ofNat d := by
-          rcases lt_or_gt_of_ne hmi with h | h
-          · simp [gdecAtom, Atom.ofNat, hd, h, h.le]
-          · have : ¬ (m ≤ i) := by omega
-            simp [gdecAtom, Atom.ofNat, hd, this, show ¬ (m < i) by omega]
-        set w : ℕ := (π (Atom.ofNat d)).val with hw
-        have hval : (incFun i π (Atom.ofNat m)).val = if w < i then w else w + 1 := by
-          have hne : (Atom.ofNat m).val ≠ i := by simpa [Atom.ofNat] using hmi
-          simp only [incFun, hne, ite_false, hdec, gincAtom, ← hw]
-          split_ifs <;> rfl
-        rw [dpm_var, incPerm_apply, hval]
-        have hrhs : nsub (π • t) i (var (if w < i then w else w + 1)) = var w := by
-          by_cases h : w < i
-          · simp only [h, ite_true, nsub_var]
-            rw [ite_eq_right (by omega : ¬ i < w), ite_eq_right (by omega : ¬ w = i)]
-          · simp only [h, ite_false, nsub_var]
-            rw [ite_eq_left (by omega : i < w + 1)]
-            congr 1
-        rw [hrhs]
-        rcases lt_or_gt_of_ne hmi with h | h
-        · simp only [nsub_var, ite_eq_right (by omega : ¬ i < m), ite_eq_right hmi, dpm_var, hw,
-            hd, ite_eq_left h]
-        · simp only [nsub_var, ite_eq_left (show i < m by omega), dpm_var, hw, hd,
-            ite_eq_right (by omega : ¬ m < i)]
+      rw [dpm_var, incPerm_apply]
+      simp only [nsub_var, incFun, gincAtom, gdecAtom, Atom.ofNat]
+      split_ifs <;> simp_all [dpm_var, Atom.ofNat] <;> split_ifs <;> grind
   | app u₁ u₂ ih₁ ih₂ => simp only [nsub_app, dpm_app, ih₁, ih₂]
   | abs u ih => simp only [nsub_abs, dpm_abs, ih, incPerm_zero_incPerm, lift_dpm]
 
 /-- `→d` is equivariant, by rule induction using Lemma 17 (HOL `dbeta_dpm`). -/
-lemma Beta.dpm {t u : Term} (h : Beta t u) (π : FinPerm) : Beta (π • t) (π • u) := by
+lemma Beta.dpm {t u : Term} (h : t ⭢β u) (π : FinPerm) : (π • t) ⭢β (π • u) := by
   induction h generalizing π with
   | red t' s =>
       simp only [dpm_app, dpm_abs]
@@ -107,13 +73,13 @@ lemma Beta.dpm {t u : Term} (h : Beta t u) (π : FinPerm) : Beta (π • t) (π 
   | abs _ ih => simp only [dpm_abs]; exact Beta.abs (ih _)
 
 /-- Equivariance of `→d` in if-and-only-if form, as required by Theorem 15. -/
-lemma Beta.equivariant (π : FinPerm) (t u : Term) : Beta (π • t) (π • u) ↔ Beta t u := by
+lemma Beta.equivariant (π : FinPerm) (t u : Term) : (π • t) ⭢β (π • u) ↔ t ⭢β u := by
   refine ⟨fun h => ?_, fun h => Beta.dpm h π⟩
   have h2 := Beta.dpm h π⁻¹
   rwa [inv_smul_smul, inv_smul_smul] at h2
 
-/-- **Lemma 18**: `→d' ⊆ →d`.  The `dLAM` case is Theorem 15 applied to `→d`. -/
-lemma beta_of_dbeta' {t u : Term} (h : DBeta' t u) : Beta t u := by
+/-- **Lemma 18** (HOL `dbeta'_dbeta`): `→d' ⊆ →d`.  The `dLAM` case is Theorem 15 for `→d`. -/
+lemma beta_of_dbeta' {t u : Term} (h : t →d' u) : t ⭢β u := by
   induction h with
   | red i t u => exact beta_dLAM_redex i t u
   | appL _ _ ih => exact Beta.appL ih
@@ -122,8 +88,8 @@ lemma beta_of_dbeta' {t u : Term} (h : DBeta' t u) : Beta t u := by
       exact (dABS_rules_are_dLAM_compatible Beta Beta.equivariant).mp
         (fun _ _ h => Beta.abs h) i _ _ ih
 
-/-- **Theorem 19** (Relations `→d` and `→d'` Coincide). -/
-theorem dbeta'_iff_beta {t u : Term} : DBeta' t u ↔ Beta t u :=
+/-- **Theorem 19** (Relations `→d` and `→d'` Coincide, HOL `dbeta_dbeta'_eqn`). -/
+theorem dbeta'_iff_beta {t u : Term} : t →d' u ↔ t ⭢β u :=
   ⟨beta_of_dbeta', dbeta'_of_beta⟩
 
 end Term
@@ -135,16 +101,16 @@ namespace Cslib.LambdaCalculus.NamedDeBruijn
 open Cslib.Logic.Nominal
 open Cslib.LambdaCalculus.Unscoped.Untyped
 open Cslib.LambdaCalculus.Named.Untyped (TermAlpha BetaAlpha)
+open scoped Cslib.LambdaCalculus.Named.Untyped
 
-/-- **Theorem 20**, homomorphism part: `M →β N ⇔ f M →d f N`. -/
-theorem betaAlpha_iff_beta {M N : TermAlpha Atom} :
-    BetaAlpha M N ↔ Beta (toDB M) (toDB N) := by
+/-- **Theorem 20**, homomorphism part: `M →β N ⇔ f M →d f N` (HOL `dbeta_ccbeta_eqn`). -/
+theorem betaAlpha_iff_beta {M N : TermAlpha Atom} : M →βα N ↔ toDB M ⭢β toDB N := by
   rw [betaAlpha_iff_dbeta', Term.dbeta'_iff_beta]
 
 /-- **Theorem 20**: `dB` with `→d` and `λNα` with `→β` are isomorphic in the sense of
 equation (3). -/
 theorem isomorphism :
-    ∃ f : TermAlpha Atom ≃ Term, ∀ M N, BetaAlpha M N ↔ Beta (f M) (f N) :=
+    ∃ f : TermAlpha Atom ≃ Term, ∀ M N, M →βα N ↔ f M ⭢β f N :=
   ⟨dbEquiv, fun _ _ => betaAlpha_iff_beta⟩
 
 /-- Theorem 20 as a Mathlib relation isomorphism between `→β` on `Λα` and `→d` on `dB`. -/

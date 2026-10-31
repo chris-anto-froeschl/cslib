@@ -10,20 +10,9 @@ public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.DeBruijnPerm
 
 /-! # Lifting is a permutation (paper, Section 4.3)
 
-The "nominal *Aha!*" of
-
-* Michael Norrish and René Vestergaard, *Proof Pearl: de Bruijn Terms Really Do Work*,
-  TPHOLs 2007
-
-is that the substitution and the lifting hidden inside `dLAM` are nothing but a variable
-permutation.  This file contains the corresponding results:
-
-* **Lemma 13**, relating the paper's clean substitution `sub` to Nipkow's `nsub`, and the two
-  "alternative redex rules" that it yields;
-* **Lemma 14**, that lifting is the action of the explicitly constructed permutation
-  `liftingPerm`;
-* **Theorem 15**, that for an equivariant relation the `dABS`- and `dLAM`-congruence rules
-  correspond.
+The first half of Section 4.3 of [Norrish2007a]: the lifting and the substitution inside `dLAM`
+are both permutation actions, so an equivariant relation cannot tell a `dABS` term from its
+presentation as a `dLAM` term.
 
 ## Main statements
 
@@ -32,7 +21,7 @@ permutation.  This file contains the corresponding results:
 * `Term.dbeta'_dABS_redex` : `→d'` reduces de Bruijn redexes correctly (HOL `alt_dbeta'_rule`).
 * `Term.liftingPerm`, `Term.liftingPerm_apply` : the lifting permutation and its behaviour
   (HOL `lifting_pm_def`, `lifting_pm_behaves`).
-* `Term.lift_eq_dpm` : **Lemma 14** (HOL `lifts_are_specific_dpms`, `lifts_are_dpms`).
+* `Term.lift_eq_dpm` : **Lemma 14** (HOL `lifts_are_specific_dpms`).
 * `Term.dABS_rules_are_dLAM_compatible` : **Theorem 15**.
 
 ## References
@@ -66,22 +55,21 @@ lemma dsub_eq_nsub (u : Term) (i n : ℕ) (t : Term) (h : n ≤ i) :
 
 /-- Nipkow's relation `→d` does reduce `→d'`-redexes in the correct way (HOL `alt_dbeta_rule`):
 `dAPP (dLAM i t) u →d sub u i t`.  Lemma 13 with `n = 0`. -/
-lemma beta_dLAM_redex (i : ℕ) (t u : Term) : Beta (app (dLAM i t) u) (dsub u i t) := by
+lemma beta_dLAM_redex (i : ℕ) (t u : Term) : app (dLAM i t) u ⭢β dsub u i t := by
   rw [dsub_eq_nsub u i 0 t (Nat.zero_le i)]
   exact Beta.red _ _
 
 /-- Conversely, the de Bruijn redexes reduce under `→d'` (HOL `alt_dbeta'_rule`):
 `dAPP (dABS t) u →d' nsub u 0 t`. -/
-lemma dbeta'_dABS_redex (t u : Term) : DBeta' (app (abs t) u) (nsub u 0 t) := by
+lemma dbeta'_dABS_redex (t u : Term) : app (abs t) u →d' nsub u 0 t := by
   obtain ⟨i, hi⟩ := dfresh_exists (abs t)
   obtain ⟨t₀, ht⟩ := dABS_renamed hi
   have ht' : t = dsub (var 0) (i + 1) (lift t₀ 0) := Term.abs.inj ht
   rw [ht, ht', ← dsub_eq_nsub u i 0 t₀ (Nat.zero_le i)]
   exact DBeta'.red i t₀ u
 
-/-- The lifting permutation (HOL `lifting_pm_def`).  Given a lower bound `lim` and an upper
-bound `n`, `liftingPerm lim n` is the cycle that maps `î` to `i+1` for `lim ≤ i ≤ n`, maps
-`n+1` back to `lim`, and preserves all other values. -/
+/-- The function underlying `liftingPerm lim n`: it maps `î` to `i+1` for `lim ≤ i ≤ n`, maps
+`n+1` back to `lim`, and fixes all other atoms (HOL `lifting_pm_behaves`). -/
 def liftingPermFun (lim n : ℕ) (a : Atom) : Atom :=
   if a.val < lim then a
   else if a.val ≤ n then ⟨a.val + 1⟩
@@ -95,19 +83,22 @@ def liftingPermInvFun (lim n : ℕ) (a : Atom) : Atom :=
   else if a.val ≤ n + 1 then ⟨a.val - 1⟩
   else a
 
+/-- `liftingPermInvFun lim n` is a right inverse of `liftingPermFun lim n`. -/
 lemma liftingPermFun_inv (lim n : ℕ) (a : Atom) :
     liftingPermFun lim n (liftingPermInvFun lim n a) = a := by
   obtain ⟨v⟩ := a
   simp only [liftingPermFun, liftingPermInvFun]
-  split_ifs <;> simp_all <;> omega
+  split_ifs <;> grind
 
+/-- `liftingPermInvFun lim n` is a left inverse of `liftingPermFun lim n`. -/
 lemma liftingPermInvFun_inv (lim n : ℕ) (a : Atom) :
     liftingPermInvFun lim n (liftingPermFun lim n a) = a := by
   obtain ⟨v⟩ := a
   simp only [liftingPermFun, liftingPermInvFun]
-  split_ifs <;> simp_all <;> omega
+  split_ifs <;> grind
 
-/-- The lifting permutation as an element of `FinPerm`. -/
+/-- The lifting permutation `lift-pm(lim, n)` (HOL `lifting_pm_def`), the cycle
+`lim → lim+1 → ... → n+1 → lim` on atoms. -/
 def liftingPerm (lim n : ℕ) : FinPerm :=
   ⟨⟨liftingPermFun lim n, liftingPermInvFun lim n,
       fun a => liftingPermInvFun_inv lim n a, fun a => liftingPermFun_inv lim n a⟩,
@@ -163,37 +154,15 @@ lemma lift_eq_dpm (t : Term) (n : ℕ) (h : ∀ i ∈ dFV t, i ≤ n) (m : ℕ) 
         have := h _ hmem
         omega
 
-/-- **Lemma 14**, existential form (HOL `lifts_are_dpms`): every lifting is a permutation. -/
-lemma lift_is_dpm (t : Term) (m : ℕ) : ∃ π : FinPerm, lift t m = π • t := by
-  obtain ⟨n, hn⟩ := dFV_bounded t
-  exact ⟨liftingPerm m n, lift_eq_dpm t n (fun i hi => (hn i hi).le) m⟩
-
 /-- Incrementing a transposition of indices shifts both indices. -/
 lemma incPerm_zero_swap (i j : ℕ) :
     incPerm 0 (FinPerm.swap (Atom.ofNat i) (Atom.ofNat j)) =
       FinPerm.swap (Atom.ofNat (i + 1)) (Atom.ofNat (j + 1)) := by
-  refine FinPerm.ext (fun a => ?_)
-  apply Atom.ext
-  rw [incPerm_apply, show a = Atom.ofNat a.val from rfl, incFun_zero_val]
-  rcases Nat.eq_zero_or_pos a.val with h0 | h0
-  · rw [ite_eq_left h0, FinPerm.swap_apply_of_ne_of_ne] <;> simp [Atom.ofNat, h0]
-  · rw [ite_eq_right (by omega)]
-    by_cases hi : a.val - 1 = i
-    · rw [hi, FinPerm.swap_apply_left]
-      have hv : a.val = i + 1 := by omega
-      rw [hv, FinPerm.swap_apply_left]
-      rfl
-    · by_cases hj : a.val - 1 = j
-      · rw [hj, FinPerm.swap_apply_right]
-        have hv : a.val = j + 1 := by omega
-        rw [hv, FinPerm.swap_apply_right]
-        rfl
-      · rw [FinPerm.swap_apply_of_ne_of_ne (by simp [Atom.ofNat]; omega)
-            (by simp [Atom.ofNat]; omega),
-          FinPerm.swap_apply_of_ne_of_ne (by simp [Atom.ofNat]; omega)
-            (by simp [Atom.ofNat]; omega)]
-        simp only [Atom.ofNat]
-        omega
+  refine FinPerm.ext (fun ⟨v⟩ => ?_)
+  rw [incPerm_apply]
+  simp only [incFun, gincAtom, gdecAtom, FinPerm.apply_def, FinPerm.swap_val,
+    Equiv.swap_apply_def, Atom.ofNat]
+  split_ifs <;> grind
 
 /-- Substituting `dV i` for `j` in a term in which `i` is not free is the transposition
 `[i ↔ j]` (HOL `fresh_dpm_sub`, `dLAM_alt_dpm`). -/
@@ -202,14 +171,9 @@ lemma dsub_var_eq_dpm {t : Term} {i j : ℕ} (h : i ∉ dFV t) :
   induction t generalizing i j with
   | var m =>
       simp only [mem_dFV_var] at h
-      rw [dsub_var, dpm_var]
-      by_cases hm : m = j
-      · subst hm
-        rw [ite_eq_left rfl, FinPerm.swap_apply_right]
-        rfl
-      · rw [ite_eq_right hm, FinPerm.swap_apply_of_ne_of_ne (by simp [Atom.ofNat]; omega)
-          (by simp [Atom.ofNat]; omega)]
-        rfl
+      simp only [dsub_var, dpm_var, FinPerm.apply_def, FinPerm.swap_val, Equiv.swap_apply_def,
+        Atom.ofNat]
+      split_ifs <;> grind
   | app t u iht ihu =>
       simp only [mem_dFV_app, not_or] at h
       rw [dsub_app, dpm_app, iht h.1, ihu h.2]
@@ -224,10 +188,7 @@ depends only on `i` and on a bound `n` for the free indices of `t`. -/
 lemma dLAM_eq_abs_dpm (i n : ℕ) (t : Term) (h : ∀ k ∈ dFV t, k ≤ n) :
     dLAM i t =
       abs ((FinPerm.swap (Atom.ofNat 0) (Atom.ofNat (i + 1)) * liftingPerm 0 n) • t) := by
-  have h0 : (0 : ℕ) ∉ dFV (lift t 0) := by
-    simp only [mem_dFV_lift]
-    rintro (⟨hlt, _⟩ | ⟨hlt, _⟩) <;> omega
-  rw [dLAM, dsub_var_eq_dpm h0, lift_eq_dpm t n h 0, mul_smul]
+  rw [dLAM, dsub_var_eq_dpm (by grind [mem_dFV_lift]), lift_eq_dpm t n h 0, mul_smul]
 
 /-- Lifting is injective (HOL `lift_11`). -/
 lemma lift_inj {t u : Term} {n : ℕ} (h : lift t n = lift u n) : t = u := by
@@ -264,10 +225,6 @@ lemma mem_dFV_lift_succ (u : Term) (i : ℕ) : i + 1 ∈ dFV (lift u 0) ↔ i �
     · exact h
   · intro h; exact Or.inr ⟨by omega, h⟩
 
-/-- Distinct indices give distinct atoms. -/
-lemma ofNat_ne_ofNat {k l : ℕ} (h : k ≠ l) : Atom.ofNat k ≠ Atom.ofNat l :=
-  fun hc => h (congrArg Atom.val hc)
-
 /-- The permutation form of `dLAM`, obtained from `dsub_var_eq_dpm`: the substitution inside
 `dLAM` is the transposition `[0 ↔ i+1]`. -/
 lemma dLAM_eq_abs_swap (i : ℕ) (t : Term) :
@@ -285,46 +242,33 @@ lemma swap_lift_eq_aux {i j : ℕ} {t u : Term} (hij : i ≠ j)
     (h : (FinPerm.swap (Atom.ofNat 0) (Atom.ofNat (i + 1))) • lift t 0
         = (FinPerm.swap (Atom.ofNat 0) (Atom.ofNat (j + 1))) • lift u 0) :
     i ∉ dFV u ∧ t = (FinPerm.swap (Atom.ofNat i) (Atom.ofNat j)) • u := by
-  have hA : lift t 0 = (FinPerm.swap (Atom.ofNat 0) (Atom.ofNat (i + 1))
-      * FinPerm.swap (Atom.ofNat 0) (Atom.ofNat (j + 1))) • lift u 0 := by
-    rw [mul_smul, ← h, ← mul_smul, FinPerm.swap_swap, one_smul]
-  have hτi : (FinPerm.swap (Atom.ofNat 0) (Atom.ofNat (i + 1))
-      * FinPerm.swap (Atom.ofNat 0) (Atom.ofNat (j + 1))) (Atom.ofNat (i + 1))
-      = Atom.ofNat 0 := by
-    rw [FinPerm.mul_apply,
-      FinPerm.swap_apply_of_ne_of_ne (ofNat_ne_ofNat (by omega)) (ofNat_ne_ofNat (by omega)),
-      FinPerm.swap_apply_right]
+  set σ := FinPerm.swap (Atom.ofNat 0) (Atom.ofNat (i + 1)) with hσ
+  set τ := FinPerm.swap (Atom.ofNat 0) (Atom.ofNat (j + 1)) with hτ
+  set ρ := FinPerm.swap (Atom.ofNat (i + 1)) (Atom.ofNat (j + 1)) with hρ
+  have hA : lift t 0 = (σ * τ) • lift u 0 := by
+    rw [mul_smul, ← h, ← mul_smul, show σ * σ = 1 from FinPerm.swap_swap _ _, one_smul]
   have hiB : i + 1 ∉ dFV (lift u 0) := by
     intro hmem
     refine zero_not_mem_dFV_lift t ?_
     rw [hA, mem_dFV_dpm]
-    exact ⟨i + 1, hmem, by rw [hτi]; rfl⟩
+    refine ⟨i + 1, hmem, ?_⟩
+    rw [hσ, hτ, FinPerm.mul_apply]
+    simp only [FinPerm.apply_def, FinPerm.swap_val, Equiv.swap_apply_def, Atom.ofNat]
+    split_ifs <;> grind
   refine ⟨fun hc => hiB ((mem_dFV_lift_succ u i).mpr hc), ?_⟩
-  have hfix : ((FinPerm.swap (Atom.ofNat (i + 1)) (Atom.ofNat (j + 1)))⁻¹
-      * (FinPerm.swap (Atom.ofNat 0) (Atom.ofNat (i + 1))
-        * FinPerm.swap (Atom.ofNat 0) (Atom.ofNat (j + 1)))) • lift u 0 = lift u 0 := by
+  have hfix : (ρ⁻¹ * (σ * τ)) • lift u 0 = lift u 0 := by
     refine supports_dFV (lift u 0) _ (fun a ha => ?_)
     simp only [Finset.mem_image] at ha
     obtain ⟨k, hk, rfl⟩ := ha
     have hk0 : k ≠ 0 := fun hc => zero_not_mem_dFV_lift u (hc ▸ hk)
     have hki : k ≠ i + 1 := fun hc => hiB (hc ▸ hk)
-    rw [FinPerm.mul_apply, FinPerm.swap_inv]
-    rcases eq_or_ne k (j + 1) with rfl | hkj
-    · rw [FinPerm.mul_apply, FinPerm.swap_apply_right, FinPerm.swap_apply_left,
-        FinPerm.swap_apply_left]
-    · rw [FinPerm.mul_apply,
-        FinPerm.swap_apply_of_ne_of_ne (ofNat_ne_ofNat hk0) (ofNat_ne_ofNat hkj),
-        FinPerm.swap_apply_of_ne_of_ne (ofNat_ne_ofNat hk0) (ofNat_ne_ofNat hki),
-        FinPerm.swap_apply_of_ne_of_ne (ofNat_ne_ofNat hki) (ofNat_ne_ofNat hkj)]
-  have hAρ : lift t 0 = (FinPerm.swap (Atom.ofNat (i + 1)) (Atom.ofNat (j + 1))) • lift u 0 := by
-    rw [hA, show (FinPerm.swap (Atom.ofNat 0) (Atom.ofNat (i + 1))
-        * FinPerm.swap (Atom.ofNat 0) (Atom.ofNat (j + 1)))
-      = FinPerm.swap (Atom.ofNat (i + 1)) (Atom.ofNat (j + 1))
-        * ((FinPerm.swap (Atom.ofNat (i + 1)) (Atom.ofNat (j + 1)))⁻¹
-          * (FinPerm.swap (Atom.ofNat 0) (Atom.ofNat (i + 1))
-            * FinPerm.swap (Atom.ofNat 0) (Atom.ofNat (j + 1))))
-      by rw [← mul_assoc, mul_inv_cancel, one_mul], mul_smul, hfix]
-  rw [← incPerm_zero_swap, ← lift_dpm] at hAρ
+    rw [hρ, hσ, hτ, FinPerm.swap_inv, FinPerm.mul_apply, FinPerm.mul_apply]
+    simp only [FinPerm.apply_def, FinPerm.swap_val, Equiv.swap_apply_def, Atom.ofNat]
+    split_ifs <;> grind
+  have hAρ : lift t 0 = ρ • lift u 0 := by
+    rw [hA, show σ * τ = ρ * (ρ⁻¹ * (σ * τ)) by rw [← mul_assoc, mul_inv_cancel, one_mul],
+      mul_smul, hfix]
+  rw [hρ, ← incPerm_zero_swap, ← lift_dpm] at hAρ
   exact lift_inj hAρ
 
 /-- `dLAM` is injective up to a transposition of the two abstracted indices, like `LAM` on
@@ -349,8 +293,7 @@ lemma dLAM_eq_dLAM_iff {i j : ℕ} {t u : Term} :
         refine FinPerm.swap_apply_of_ne_of_ne ?_ ?_
         · intro hk; exact hi (by rwa [show k = i from congrArg Atom.val hk] at hku)
         · intro hk; exact hkj (congrArg Atom.val hk)
-      rw [dpm_dLAM, FinPerm.swap_apply_right] at hsupp
-      exact hsupp
+      rwa [dpm_dLAM, FinPerm.swap_apply_right] at hsupp
 
 /-- **Theorem 15** (Abstraction Congruences Correspond): if `R` is equivariant, then the
 `dABS`-congruence rule and the `dLAM`-congruence rule for `R` are equivalent
@@ -360,23 +303,18 @@ theorem dABS_rules_are_dLAM_compatible (R : Term → Term → Prop)
     (∀ t u, R t u → R (abs t) (abs u)) ↔ (∀ i t u, R t u → R (dLAM i t) (dLAM i u)) := by
   constructor
   · intro habs i t u htu
-    obtain ⟨n₁, hn₁⟩ := dFV_bounded t
-    obtain ⟨n₂, hn₂⟩ := dFV_bounded u
-    set n := max n₁ n₂ with hn
-    have ht : ∀ k ∈ dFV t, k ≤ n := fun k hk => by have := hn₁ k hk; omega
-    have hu : ∀ k ∈ dFV u, k ≤ n := fun k hk => by have := hn₂ k hk; omega
-    rw [dLAM_eq_abs_dpm i n t ht, dLAM_eq_abs_dpm i n u hu]
+    obtain ⟨n, hn⟩ := dFV_bounded (app t u)
+    rw [dLAM_eq_abs_dpm i n t (fun k hk => (hn k (by simp [hk])).le),
+      dLAM_eq_abs_dpm i n u (fun k hk => (hn k (by simp [hk])).le)]
     exact habs _ _ ((hR _ t u).mpr htu)
   · intro hlam t u htu
     obtain ⟨i, hi⟩ := dfresh_exists (app (abs t) (abs u))
     simp only [mem_dFV_app, not_or] at hi
     obtain ⟨t₀, ht₀⟩ := dABS_renamed hi.1
     obtain ⟨u₀, hu₀⟩ := dABS_renamed hi.2
-    obtain ⟨n₁, hn₁⟩ := dFV_bounded t₀
-    obtain ⟨n₂, hn₂⟩ := dFV_bounded u₀
-    set n := max n₁ n₂ with hn
-    have ht : ∀ k ∈ dFV t₀, k ≤ n := fun k hk => by have := hn₁ k hk; omega
-    have hu : ∀ k ∈ dFV u₀, k ≤ n := fun k hk => by have := hn₂ k hk; omega
+    obtain ⟨n, hn⟩ := dFV_bounded (app t₀ u₀)
+    have ht : ∀ k ∈ dFV t₀, k ≤ n := fun k hk => (hn k (by simp [hk])).le
+    have hu : ∀ k ∈ dFV u₀, k ≤ n := fun k hk => (hn k (by simp [hk])).le
     rw [ht₀, hu₀]
     refine hlam i t₀ u₀ ((hR (FinPerm.swap (Atom.ofNat 0) (Atom.ofNat (i + 1))
       * liftingPerm 0 n) t₀ u₀).mp ?_)
