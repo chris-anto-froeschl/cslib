@@ -9,7 +9,7 @@ module
 public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.FromTerm
 public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.LiftingPermutation
 
-/-! # Isomorphism `dB ≅ λNα`
+/-! # Named and de Bruijn β-reduction are isomorphic
 
 Nipkow's β-reduction `→d` on de Bruijn terms [Nipkow2001] coincides with `→d'`, so `f` is an
 isomorphism between β-reduction on `Λα` and `→d` [Norrish2007a].

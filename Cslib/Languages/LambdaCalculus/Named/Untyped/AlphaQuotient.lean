@@ -8,12 +8,14 @@ module
 
 public import Cslib.Languages.LambdaCalculus.Named.Untyped.AlphaEquivProperties
 
-/-! # The α-quotient `Λα` and the reduction system `λNα`
+/-! # Named λ-terms up to α-equivalence
 
-Named λ-terms quotiented by α-equivalence, with β- and η-reduction on the quotient: the named
-side of the isomorphism with de Bruijn terms of [Norrish2007a]. Substitution is lifted from raw
-terms; `TermAlpha.subst_unique` (in `AlphaQuotientProperties.lean`) shows that this agrees with
-defining it on the quotient by recursion, as in [Norrish2006].
+The type `TermAlpha Var` (written `Λα`) of named λ-terms quotiented by α-equivalence, so that
+terms differing only in the names of bound variables are equal. Variables, application,
+abstraction and capture-avoiding substitution are lifted from raw terms, and β- and η-reduction
+are defined directly on the quotient. Defining substitution on the quotient by recursion instead,
+as in [Norrish2006], gives the same function (`TermAlpha.subst_unique` in
+`AlphaQuotientProperties.lean`).
 
 ## Main definitions
 
@@ -23,8 +25,6 @@ defining it on the quotient by recursion, as in [Norrish2006].
 
 ## References
 
-* [Michael Norrish and René Vestergaard, *Proof Pearl: de Bruijn Terms Really Do
-  Work*][Norrish2007a]
 * [Michael Norrish, *Mechanising λ-calculus using a classical first order theory of terms with
   permutations*][Norrish2006]
 -/

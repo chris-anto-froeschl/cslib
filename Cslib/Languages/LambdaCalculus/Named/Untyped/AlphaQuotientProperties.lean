@@ -9,11 +9,11 @@ module
 public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.Isomorphism
 public import Cslib.Languages.LambdaCalculus.Unscoped.Untyped.ChurchRosser
 
-/-! # Properties of `Λα` inherited from de Bruijn terms
+/-! # Properties of named λ-terms up to α-equivalence
 
-Results about α-quotiented terms obtained through the bijection `toDB : Λα ≃ dB` and the
-isomorphism of β-reductions `dbRelIso`. They live outside `AlphaQuotient.lean` because the
-de Bruijn side imports it.
+Results about `TermAlpha` beyond its construction. The present ones are proved by transfer from
+de Bruijn terms, along the bijection `toDB` and the isomorphism of β-reductions `dbRelIso`;
+since that development imports `AlphaQuotient.lean`, such results cannot live there.
 
 ## Main statements
 

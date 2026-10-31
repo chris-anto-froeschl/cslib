@@ -10,11 +10,12 @@ public import Cslib.Languages.LambdaCalculus.Unscoped.Untyped.BetaReduction
 public import Mathlib.Data.Finset.Basic
 public import Mathlib.Data.Finset.Image
 
-/-! # Pure de Bruijn terms: `lift`, `sub` and `dLAM`
+/-! # Free indices, shifting and abstraction on de Bruijn terms
 
-Shifting, substitution and abstraction over a free index on Cslib's de Bruijn terms
-`Unscoped.Untyped.Term`, following [Norrish2007a]. The constructors `var`, `app`, `abs` are the
-paper's `dV`, `dAPP`, `dABS`, and β-reduction `Beta` is its `→d`.
+Free indices, size, shifting and substitution on Cslib's de Bruijn terms `Unscoped.Untyped.Term`,
+and abstraction `dLAM i t` over a free index `i`, which builds de Bruijn terms the way named
+terms are built. `dLAM` and the β-reduction `DBeta'` stated with it are from [Norrish2007a],
+where the constructors are written `dV`, `dAPP`, `dABS`.
 
 ## Main definitions
 
@@ -74,8 +75,8 @@ lemma nsub_app (z : Term) (k : ℕ) (t u : Term) :
 lemma nsub_abs (z : Term) (k : ℕ) (t : Term) :
     nsub z k (abs t) = abs (nsub (lift z 0) (k + 1) t) := abs_sub_zero
 
-/-- Definition 4 [Norrish2007a] (`sub` there): `dsub z k t` puts `z` in place of the index `k`
-in `t` and leaves the other free indices alone. An alias for `Term.subst`. -/
+/-- `dsub z k t` puts `z` in place of the index `k` in `t` and leaves the other free indices
+alone. An alias for `Term.subst` (`sub` in [Norrish2007a]). -/
 abbrev dsub (z : Term) (k : ℕ) (t : Term) : Term := subst k z t
 
 /-- `dsub` on `var`. -/

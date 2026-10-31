@@ -13,7 +13,7 @@ public import Mathlib.GroupTheory.Perm.Basic
 # Finite Permutations
 
 This file defines finite permutations of atoms - permutations that only move
-finitely many atoms. This is the key structure for nominal set theory.
+finitely many atoms.
 
 ## Main definitions
 
@@ -26,9 +26,6 @@ Since `Atom` is infinite (not `Fintype`), we cannot use Mathlib's `Perm.support`
 directly (which requires `Fintype`). Instead, we define a predicate
 `IsFinitelySupported` that states a permutation has finite support, and define
 `FinPerm` as the subtype of permutations satisfying this predicate.
-
-Key insight: in nominal set theory, we only work with *finitely-supported*
-permutations, even though the set of atoms is infinite.
 
 This file is ported from the `spitters/nominal-lean` repository.
 
