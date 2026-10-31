@@ -131,13 +131,13 @@ lemma lift_eq_dpm (t : Term) (n : ℕ) (h : ∀ i ∈ dFV t, i ≤ n) (m : ℕ) 
     lift t m = (liftingPerm m n) • t := by
   induction t generalizing m n with
   | var i =>
-      have hi : i ≤ n := h i (by simp)
+      have hi : i ≤ n := h i (by simp [mem_dFV_var])
       rw [dpm_var, lift_var, liftingPerm_apply]
       simp only [apply_ite Atom.val, Atom.ofNat_val]
       split_ifs <;> rfl
   | app t u iht ihu =>
-      rw [dpm_app, lift_app, iht n (fun i hi => h i (by simp [hi])),
-        ihu n (fun i hi => h i (by simp [hi]))]
+      rw [dpm_app, lift_app, iht n (fun i hi => h i (by simp [mem_dFV_app, hi])),
+        ihu n (fun i hi => h i (by simp [mem_dFV_app, hi]))]
   | abs t ih =>
       rw [dpm_abs, lift_abs, incPerm_zero_liftingPerm]
       refine congrArg abs (ih (n + 1) (fun j hj => ?_) (m + 1))
@@ -299,8 +299,8 @@ theorem dABS_rules_are_dLAM_compatible (R : Term → Term → Prop)
   constructor
   · intro habs i t u htu
     obtain ⟨n, hn⟩ := dFV_bounded (app t u)
-    rw [dLAM_eq_abs_dpm i n t (fun k hk => (hn k (by simp [hk])).le),
-      dLAM_eq_abs_dpm i n u (fun k hk => (hn k (by simp [hk])).le)]
+    rw [dLAM_eq_abs_dpm i n t (fun k hk => (hn k (by simp [mem_dFV_app, hk])).le),
+      dLAM_eq_abs_dpm i n u (fun k hk => (hn k (by simp [mem_dFV_app, hk])).le)]
     exact habs _ _ ((hR _ t u).mpr htu)
   · intro hlam t u htu
     obtain ⟨i, hi⟩ := dfresh_exists (app (abs t) (abs u))
@@ -308,8 +308,8 @@ theorem dABS_rules_are_dLAM_compatible (R : Term → Term → Prop)
     obtain ⟨t₀, ht₀⟩ := dABS_renamed hi.1
     obtain ⟨u₀, hu₀⟩ := dABS_renamed hi.2
     obtain ⟨n, hn⟩ := dFV_bounded (app t₀ u₀)
-    have ht : ∀ k ∈ dFV t₀, k ≤ n := fun k hk => (hn k (by simp [hk])).le
-    have hu : ∀ k ∈ dFV u₀, k ≤ n := fun k hk => (hn k (by simp [hk])).le
+    have ht : ∀ k ∈ dFV t₀, k ≤ n := fun k hk => (hn k (by simp [mem_dFV_app, hk])).le
+    have hu : ∀ k ∈ dFV u₀, k ≤ n := fun k hk => (hn k (by simp [mem_dFV_app, hk])).le
     rw [ht₀, hu₀]
     refine hlam i t₀ u₀ ((hR (FinPerm.swap (Atom.ofNat 0) (Atom.ofNat (i + 1))
       * liftingPerm 0 n) t₀ u₀).mp ?_)

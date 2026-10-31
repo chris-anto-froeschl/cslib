@@ -93,7 +93,7 @@ def fromTerm : Lam → Term
   | .abs x m => Term.dLAM x.val (fromTerm m)
 
 /-- Equation (5), variable case. -/
-@[simp] lemma fromTerm_var (x : Atom) : fromTerm (.var x) = .var x.val := rfl
+lemma fromTerm_var (x : Atom) : fromTerm (.var x) = .var x.val := rfl
 
 /-- Equation (5), application case. -/
 lemma fromTerm_app (m n : Lam) :
@@ -219,9 +219,9 @@ lemma fromTerm_dsub (m n : Lam) (x : Atom) :
     match m with
     | .var y =>
         obtain rfl | h := eq_or_ne y x
-        · simp [Named.Untyped.Term.subst, Term.dsub]
+        · simp [Named.Untyped.Term.subst, Term.dsub_var, fromTerm_var]
         · have h' : y.val ≠ x.val := fun hc => h (Atom.ext hc)
-          simp [Named.Untyped.Term.subst, h, Term.dsub, h']
+          simp [Named.Untyped.Term.subst, h, Term.dsub_var, h', fromTerm_var]
     | .app m₁ m₂ =>
         have e : (Named.Untyped.Term.app m₁ m₂)[x := n]
             = Named.Untyped.Term.app (m₁[x := n]) (m₂[x := n]) := by
@@ -324,20 +324,20 @@ def toDB : TermAlpha Atom → Term :=
   Quotient.lift fromTerm (fun _ _ h => fromTerm_respects_alpha h)
 
 /-- `f` on the class of a raw term is `fromTerm` of that term. -/
-@[simp] lemma toDB_mk (m : Lam) : toDB ⟦m⟧α = fromTerm m := rfl
+lemma toDB_mk (m : Lam) : toDB ⟦m⟧α = fromTerm m := rfl
 
 /-- Equation (5) on `Λα`, variable case. -/
-@[simp] lemma toDB_var (x : Atom) : toDB (TermAlpha.var x) = .var x.val := rfl
+lemma toDB_var (x : Atom) : toDB (TermAlpha.var x) = .var x.val := rfl
 
 /-- Equation (5) on `Λα`, application case. -/
-@[simp] lemma toDB_app (M N : TermAlpha Atom) :
+lemma toDB_app (M N : TermAlpha Atom) :
     toDB (TermAlpha.app M N) = .app (toDB M) (toDB N) := by
   induction M using TermAlpha.ind
   induction N using TermAlpha.ind
   rfl
 
 /-- Equation (5) on `Λα`, abstraction case. -/
-@[simp] lemma toDB_abs (x : Atom) (M : TermAlpha Atom) :
+lemma toDB_abs (x : Atom) (M : TermAlpha Atom) :
     toDB (TermAlpha.abs x M) = Term.dLAM x.val (toDB M) := by
   induction M using TermAlpha.ind
   rfl
@@ -391,10 +391,10 @@ lemma toDB_eq_dLAM {M : TermAlpha Atom} {i : ℕ} {d : Term} (h : toDB M = Term.
 `fromTerm_dsub`. -/
 lemma dbeta'_of_betaAlpha {M N : TermAlpha Atom} (h : M →βα N) : toDB M →d' toDB N := by
   induction h with
-  | red x M N => simpa [toDB_subst] using DBeta'.red x.val (toDB M) (toDB N)
-  | appL Z _ ih => simpa using DBeta'.appL (toDB Z) ih
-  | appR Z _ ih => simpa using DBeta'.appR (toDB Z) ih
-  | abs x _ ih => simpa using DBeta'.lam x.val ih
+  | red x M N => simpa [toDB_subst, toDB_app, toDB_abs] using DBeta'.red x.val (toDB M) (toDB N)
+  | appL Z _ ih => simpa [toDB_app] using DBeta'.appL (toDB Z) ih
+  | appR Z _ ih => simpa [toDB_app] using DBeta'.appR (toDB Z) ih
+  | abs x _ ih => simpa [toDB_abs] using DBeta'.lam x.val ih
 
 /-- The "←" half of Theorem 12: a rule induction on `→d'`, using the inversion lemmas for `f`. -/
 lemma betaAlpha_of_dbeta' {t u : Term} (h : t →d' u) (M N : TermAlpha Atom) (hM : toDB M = t)

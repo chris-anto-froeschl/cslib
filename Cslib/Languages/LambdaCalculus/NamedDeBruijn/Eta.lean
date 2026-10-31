@@ -222,10 +222,10 @@ lemma deta_of_etaAlpha {M N : TermAlpha Atom} (h : M →ηα N) : DEta (toDB M) 
       have hdfv : x.val ∉ Term.dFV (fromTerm m) := fun hc => hx (by
         have h := (mem_dFV_fromTerm m x.val).mp hc
         rwa [Atom.val_ofNat] at h)
-      simpa using DEta.red (t := fromTerm m) x.val hdfv
-  | appL Z _ ih => simpa using DEta.appL (toDB Z) ih
-  | appR Z _ ih => simpa using DEta.appR (toDB Z) ih
-  | abs x _ ih => simpa using DEta.lam x.val ih
+      simpa [toDB_abs, toDB_app, toDB_var, toDB_mk] using DEta.red (t := fromTerm m) x.val hdfv
+  | appL Z _ ih => simpa [toDB_app] using DEta.appL (toDB Z) ih
+  | appR Z _ ih => simpa [toDB_app] using DEta.appR (toDB Z) ih
+  | abs x _ ih => simpa [toDB_abs] using DEta.lam x.val ih
 
 /-- The "←" half of the η-analogue of Theorem 12: a rule induction on `→e`, generalised over
 the preimages of the two de Bruijn terms, using the inversion lemmas for `f`. -/

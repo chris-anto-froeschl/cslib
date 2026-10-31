@@ -43,11 +43,11 @@ namespace Term
 abbrev lift (t : Term) (k : ℕ) : Term := incre 1 k t
 
 /-- `lift` on `dV` (Figure 2 [Norrish2007a], HOL `lift_def`). -/
-@[simp] lemma lift_var (i k : ℕ) : lift (var i) k = if i < k then var i else var (i + 1) := by
+lemma lift_var (i k : ℕ) : lift (var i) k = if i < k then var i else var (i + 1) := by
   by_cases h : k ≤ i <;> simp [lift, incre, h]
 
 /-- `lift` on `dAPP` (Figure 2 [Norrish2007a], HOL `lift_def`). -/
-@[simp] lemma lift_app (t u : Term) (k : ℕ) : lift (app t u) k = app (lift t k) (lift u k) :=
+lemma lift_app (t u : Term) (k : ℕ) : lift (app t u) k = app (lift t k) (lift u k) :=
   rfl
 
 /-- `lift` on `dABS` (Figure 2 [Norrish2007a], HOL `lift_def`). -/
@@ -80,11 +80,11 @@ paper's argument order. -/
 abbrev dsub (z : Term) (k : ℕ) (t : Term) : Term := subst k z t
 
 /-- `sub` on `dV` (Definition 4 [Norrish2007a], HOL `sub_def`). -/
-@[simp] lemma dsub_var (z : Term) (k i : ℕ) : dsub z k (var i) = if i = k then z else var i :=
+lemma dsub_var (z : Term) (k i : ℕ) : dsub z k (var i) = if i = k then z else var i :=
   rfl
 
 /-- `sub` on `dAPP` (Definition 4 [Norrish2007a], HOL `sub_def`). -/
-@[simp] lemma dsub_app (z : Term) (k : ℕ) (t u : Term) :
+lemma dsub_app (z : Term) (k : ℕ) (t u : Term) :
     dsub z k (app t u) = app (dsub z k t) (dsub z k u) := rfl
 
 /-- `sub` on `dABS` (Definition 4 [Norrish2007a], HOL `sub_def`). -/
@@ -98,11 +98,11 @@ def dFV : Term → Finset ℕ
   | abs t => ((dFV t).erase 0).image (· - 1)
 
 /-- The free index of `dV i` is `i` (HOL `IN_dFV_thm`). -/
-@[simp] lemma mem_dFV_var (i j : ℕ) : j ∈ dFV (var i) ↔ i = j := by
+lemma mem_dFV_var (i j : ℕ) : j ∈ dFV (var i) ↔ i = j := by
   simp [dFV, eq_comm]
 
 /-- The free indices of an application (HOL `IN_dFV_thm`). -/
-@[simp] lemma mem_dFV_app (t u : Term) (j : ℕ) : j ∈ dFV (app t u) ↔ j ∈ dFV t ∨ j ∈ dFV u := by
+lemma mem_dFV_app (t u : Term) (j : ℕ) : j ∈ dFV (app t u) ↔ j ∈ dFV t ∨ j ∈ dFV u := by
   simp [dFV]
 
 /-- An index is free in `dABS t` iff its successor is free in `t` (HOL `IN_dFV_thm`). -/
@@ -173,14 +173,14 @@ lemma dbsize_abs (t : Term) : dbsize (abs t) = dbsize t + 1 := rfl
 lemma dbsize_lift (t : Term) (n : ℕ) : dbsize (lift t n) = dbsize t := by
   induction t generalizing n with
   | var i => simp only [lift_var]; split_ifs <;> rfl
-  | app t u iht ihu => simp [dbsize_app, iht, ihu]
+  | app t u iht ihu => simp [lift_app, dbsize_app, iht, ihu]
   | abs t ih => simp [lift_abs, dbsize_abs, ih]
 
 /-- Substituting a variable preserves `dbsize` (compare HOL `dbsize_sub`). -/
 lemma dbsize_dsub_var (k j : ℕ) (t : Term) : dbsize (dsub (var k) j t) = dbsize t := by
   induction t generalizing k j with
   | var m => simp only [dsub_var]; split_ifs <;> rfl
-  | app t u iht ihu => simp [dbsize_app, iht, ihu]
+  | app t u iht ihu => simp [dsub_app, dbsize_app, iht, ihu]
   | abs t ih => simp only [dsub_abs, dbsize_abs, lift_var]; split_ifs <;> simp [ih]
 
 /-- **Definition 5** [Norrish2007a]: `dLAM i t` binds the free index `i` of `t`. It lifts `t`
@@ -250,7 +250,7 @@ lemma lift_dsub (z : Term) (n j : ℕ) (t : Term) :
     lift (dsub z j t) n = dsub (lift z n) (if j < n then j else j + 1) (lift t n) := by
   induction t generalizing z n j with
   | var m => grind [lift_var, dsub_var]
-  | app t u iht ihu => simp [iht, ihu]
+  | app t u iht ihu => simp [lift_app, dsub_app, iht, ihu]
   | abs t ih =>
       have hidx : (if j + 1 < n + 1 then j + 1 else j + 1 + 1)
           = (if j < n then j else j + 1) + 1 := by split_ifs <;> omega
@@ -282,7 +282,7 @@ lemma dsub_dLAM {z : Term} {i j : ℕ} {t : Term} (hij : i ≠ j) (hi : i ∉ dF
     dsub z j (dLAM i t) = dLAM i (dsub z j t) := by
   simp only [dLAM, dsub_abs]
   rw [dsub_dsub_comm (a := lift z 0) (b := var 0) (k := j + 1) (l := i + 1)
-      (by omega) (by simp) (by grind [mem_dFV_lift]), lift_dsub]
+      (by omega) (by simp [mem_dFV_var]) (by grind [mem_dFV_lift]), lift_dsub]
   simp only [Nat.not_lt_zero, ite_false]
 
 end Term

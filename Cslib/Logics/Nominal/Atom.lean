@@ -70,10 +70,8 @@ instance : Countable Atom := ⟨⟨Atom.val, fun _ _ h => Atom.ext h⟩⟩
 /-- Constructor from natural number -/
 def ofNat (n : ℕ) : Atom := ⟨n⟩
 
-@[simp]
 theorem ofNat_val (n : ℕ) : (ofNat n).val = n := rfl
 
-@[simp]
 theorem val_ofNat (a : Atom) : ofNat a.val = a := rfl
 
 /-- Offset: one plus the maximum in a set, used for fresh generation -/

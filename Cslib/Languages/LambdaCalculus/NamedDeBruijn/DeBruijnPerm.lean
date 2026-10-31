@@ -148,14 +148,14 @@ def dpm (π : FinPerm) : Term → Term
 /-- The identity permutation acts trivially (first condition of (4) [Norrish2007a]). -/
 lemma dpm_one (t : Term) : dpm 1 t = t := by
   induction t with
-  | var i => simp [dpm]
+  | var i => rfl
   | app t u iht ihu => simp [dpm, iht, ihu]
   | abs t ih => simp only [dpm, incPerm_one, ih]
 
 /-- Acting by a product is acting twice (second condition of (4) [Norrish2007a]). -/
 lemma dpm_mul (π₁ π₂ : FinPerm) (t : Term) : dpm (π₁ * π₂) t = dpm π₁ (dpm π₂ t) := by
   induction t generalizing π₁ π₂ with
-  | var i => simp [dpm]
+  | var i => rfl
   | app t u iht ihu => simp [dpm, iht, ihu]
   | abs t ih => simp only [dpm, incPerm_mul, ih]
 
@@ -203,7 +203,7 @@ lemma supports_dFV (t : Term) : Supports ((dFV t).image Atom.ofNat) t := by
   intro π hπ
   induction t generalizing π with
   | var i =>
-      rw [dpm_var, hπ _ (by simp)]
+      rw [dpm_var, hπ _ (by simp [mem_dFV_var])]
       rfl
   | app t u iht ihu =>
       rw [dpm_app, iht π (fun a ha => hπ a ?_), ihu π (fun a ha => hπ a ?_)] <;>
