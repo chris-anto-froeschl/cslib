@@ -12,21 +12,10 @@ public import Batteries.Util.ProofWanted
 
 /-! # Using the isomorphism: transporting results from `dB` to `Λα`
 
-This file is the pay-off of the formalisation of
-
-* Michael Norrish and René Vestergaard, *Proof Pearl: de Bruijn Terms Really Do Work*,
-  TPHOLs 2007.
-
-The point of the paper (Section 1, and the conclusion of Section 5) is not the isomorphism
-`dB ≅ λNα` (**Theorem 20**, `NamedDeBruijn.isomorphism`) for its own sake, but the fact that it
-lets one *transport* results: a theorem proved on de Bruijn terms (where reasoning is
-first-order and machine-friendly) becomes a theorem about the α-quotiented named calculus
-`Λα`, whose statements are the ones a λ-calculus paper actually makes.
-
-Here that programme is carried out for the first non-trivial example available in Cslib, the
-Church–Rosser theorem: `Cslib.LambdaCalculus.Unscoped.Untyped.churchRosser_beta` proves
-confluence of `→d` on `dB` by parallel reduction and complete developments, and the isomorphism
-turns it into confluence of `→β` on `Λα`, with no further λ-calculus reasoning.
+Not part of [Norrish2007a]. An isomorphism of reduction systems (Theorem 20,
+`NamedDeBruijn.isomorphism`) transports every property stated in terms of the relation. Here it
+turns the Church–Rosser theorem for `→d` on `dB` (`Unscoped.Untyped.churchRosser_beta`) into
+the Church–Rosser theorem for `→β` on `Λα`, with no further work on named terms.
 
 ## Main statements
 
@@ -46,10 +35,8 @@ turns it into confluence of `→β` on `Λα`, with no further λ-calculus reaso
   of [Norrish2006], so lifting it from raw terms gives the substitution of `λNα`.
 * `TermAlpha.normal_form_unique` : uniqueness of β-normal forms in `Λα`.
 
-## Next milestones
-
-The `proof_wanted` declarations at the end of this file state confluence of η and of βη on
-`Λα`.  Both reduce, along the isomorphism, to results on `dB` that Cslib does not have yet.
+The `proof_wanted` declarations at the end state confluence of η and of βη on `Λα`; both
+reduce along the isomorphism to results on `dB` that Cslib does not have yet.
 
 ## References
 
@@ -70,25 +57,8 @@ variable {α β : Type*} {r : α → α → Prop} {s : β → β → Prop}
 /-- A bijection intertwining two relations intertwines their reflexive-transitive closures. -/
 lemma Relation.reflTransGen_equiv_iff (e : α ≃ β) (h : ∀ a b, r a b ↔ s (e a) (e b))
     (a b : α) : ReflTransGen r a b ↔ ReflTransGen s (e a) (e b) := by
-  constructor
-  · intro hab
-    induction hab with
-    | refl => exact .refl
-    | tail _ hstep ih => exact ih.tail ((h _ _).mp hstep)
-  · intro hab
-    -- Induct on the `s`-derivation, transporting each element back along `e.symm`.
-    have key : ∀ x y : β, ReflTransGen s x y → ∀ a : α, e a = x →
-        ReflTransGen r a (e.symm y) := by
-      intro x y hxy
-      induction hxy with
-      | refl => intro a ha; subst ha; simpa using ReflTransGen.refl
-      | @tail y z _ hstep ih =>
-          intro a ha
-          refine (ih a ha).tail ?_
-          refine (h _ _).mpr ?_
-          rw [e.apply_symm_apply, e.apply_symm_apply]
-          exact hstep
-    simpa using key (e a) (e b) hab a rfl
+  refine ⟨fun hab => hab.lift e fun _ _ => (h _ _).mp, fun hab => ?_⟩
+  simpa [Function.onFun] using hab.lift e.symm fun _ _ hxy => (h _ _).mpr (by simpa using hxy)
 
 /-- Confluence transports along an isomorphism of reduction systems (paper, equation (3)). -/
 lemma Equiv.confluent_of_equiv (e : α ≃ β) (h : ∀ a b, r a b ↔ s (e a) (e b))
@@ -117,7 +87,7 @@ end Transport
 open Cslib.Logic.Nominal
 open Cslib.LambdaCalculus.Unscoped.Untyped
 open Cslib.LambdaCalculus.Named.Untyped (TermAlpha BetaAlpha EtaAlpha)
-open scoped Cslib.LambdaCalculus.Named.Untyped.TermAlpha
+open scoped Cslib.LambdaCalculus.Named.Untyped Cslib.LambdaCalculus.Named.Untyped.TermAlpha
 
 /-- `f` is the only map `Λα → dB` satisfying the equations (5). -/
 lemma toDB_unique (g : TermAlpha Atom → Term)
@@ -131,17 +101,13 @@ lemma toDB_unique (g : TermAlpha Atom → Term)
     induction m with
     | var x => exact hvar x
     | app m n ihm ihn =>
-        have h : (⟦Named.Untyped.Term.app m n⟧α : TermAlpha Atom)
-            = TermAlpha.app ⟦m⟧α ⟦n⟧α := rfl
-        rw [h, happ, ihm, ihn, toDB_app]
+        rw [← TermAlpha.app_mk, happ, ihm, ihn, toDB_app]
     | abs x m ih =>
-        have h : (⟦Named.Untyped.Term.abs x m⟧α : TermAlpha Atom)
-            = TermAlpha.abs x ⟦m⟧α := rfl
-        rw [h, habs, ih, toDB_abs]
+        rw [← TermAlpha.abs_mk, habs, ih, toDB_abs]
 
 /-- The multi-step form of Theorem 20: `M ↠β N` in `λNα` iff `f M ↠d f N` in `dB`. -/
 lemma reflTransGen_betaAlpha_iff {M N : TermAlpha Atom} :
-    ReflTransGen BetaAlpha M N ↔ ReflTransGen Beta (toDB M) (toDB N) :=
+    ReflTransGen BetaAlpha M N ↔ toDB M ↠β toDB N :=
   Relation.reflTransGen_equiv_iff dbEquiv (fun _ _ => betaAlpha_iff_beta) M N
 
 /-- The Church–Rosser theorem for `λNα`, transported from `churchRosser_beta` on de Bruijn terms
@@ -183,12 +149,8 @@ lemma TermAlpha.bvc_induction {motive : TermAlpha Atom → Prop} (C : Finset Ato
         match m with
         | .var x => exact var x
         | .app m₁ m₂ =>
-            have hsplit : toDB (⟦Named.Untyped.Term.app m₁ m₂⟧α)
-                = Term.app (toDB ⟦m₁⟧α) (toDB ⟦m₂⟧α) := rfl
-            rw [hsplit, Term.dbsize_app] at hM
-            have h : (⟦Named.Untyped.Term.app m₁ m₂⟧α : TermAlpha Atom)
-                = TermAlpha.app ⟦m₁⟧α ⟦m₂⟧α := rfl
-            rw [h]
+            rw [← TermAlpha.app_mk] at hM ⊢
+            rw [toDB_app, Term.dbsize_app] at hM
             exact app _ _ (ih _ (by omega)) (ih _ (by omega))
         | .abs x m₀ =>
             obtain ⟨y, hy⟩ := HasFresh.fresh_exists (C ∪ m₀.fv)
@@ -252,7 +214,7 @@ proof_wanted churchRosser_etaAlpha : Confluent (EtaAlpha (Var := Atom))
 /-- Confluence of βη on `λNα`.  Needs confluence of `Beta ∪ NEta` on `dB`, for example by
 Hindley-Rosen. -/
 proof_wanted churchRosser_betaEtaAlpha :
-    Confluent (fun M N : TermAlpha Atom => BetaAlpha M N ∨ EtaAlpha M N)
+    Confluent (fun M N : TermAlpha Atom => M →βα N ∨ M →ηα N)
 
 /-- β-normal forms in `λNα` are unique. -/
 lemma TermAlpha.normal_form_unique {M N₁ N₂ : TermAlpha Atom}

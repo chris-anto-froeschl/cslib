@@ -10,30 +10,24 @@ public import Cslib.Languages.LambdaCalculus.NamedDeBruijn.Isomorphism
 
 /-! # Bonus: η-reduction (paper, Section 4.4)
 
-The final section of
-
-* Michael Norrish and René Vestergaard, *Proof Pearl: de Bruijn Terms Really Do Work*,
-  TPHOLs 2007
-
-repeats the development of Section 4.3 for η-reduction.  Thanks to **Theorem 15** (which was
-stated for an arbitrary equivariant relation) only the redex rules and the equivariance of the
-two relations have to be considered.
+Section 4.4 of [Norrish2007a] repeats Section 4.3 for η-reduction. By Theorem 15 only the
+redex rules and the equivariance of the two relations need proofs.
 
 ## Main definitions
 
-* `Term.NEta` : Nipkow's η-reduction `→ne`; its redex rule
-  `0 ∉ dFV t → dABS (dAPP t (dV 0)) →ne nsub u 0 t` uses `nsub` only to decrement the free
-  indices of `t` as it moves out from underneath the abstraction, so the choice of `u` is
-  immaterial.
-* `Term.DEta` : the "traditional style" η-reduction `→e`, whose redex rule is
+* `NEta` : Nipkow's η-reduction `→ne`, with redex rule
+  `0 ∉ dFV t → dABS (dAPP t (dV 0)) →ne nsub u 0 t`; `nsub` only decrements the free indices
+  of `t`, so `u` is immaterial (`Term.nsub_indep_of_not_mem_dFV`).
+* `DEta` : the η-reduction `→e` in the style of `→d'`, with redex rule
   `i ∉ dFV t → dLAM i (dAPP t (dV i)) →e t`.
 
 ## Main statements
 
 * `Term.nsub_lift`, `Term.lift_nsub` : the two Nipkow-style lemmas quoted in Section 4.4.
-* `Term.deta_iff_neta` : `→e` and `→ne` coincide.
-* `NamedDeBruijn.etaAlpha_iff_deta` : η-reduction on `Λα` corresponds to `→e`, hence
-  (with the previous result) to Nipkow's `→ne`; the η-analogue of **Theorem 20**.
+* `Term.deta_iff_neta` : `→e` and `→ne` coincide (HOL `neta_eq_eta`).
+* `NamedDeBruijn.etaAlpha_iff_deta` : η-reduction on `Λα` corresponds to `→e` under `f`
+  (HOL `eta_eq_lam_eta`).
+* `NamedDeBruijn.etaAlpha_iff_neta` : the η-analogue of Theorem 20, with Nipkow's `→ne`.
 
 ## References
 
@@ -76,7 +70,7 @@ inductive DEta : Term → Term → Prop where
 namespace Term
 
 /-- HOL `nsub_lift`, one of the lemmas stated by Nipkow: `nsub u n (lift t n) = t`. -/
-@[simp] lemma nsub_lift (t u : Term) (n : ℕ) : nsub u n (lift t n) = t := by
+lemma nsub_lift (t u : Term) (n : ℕ) : nsub u n (lift t n) = t := by
   induction t generalizing u n with
   | var i =>
       simp only [lift_var]; split_ifs <;> simp only [nsub_var] <;> split_ifs <;>
@@ -100,7 +94,8 @@ lemma lift_nsub {t : Term} {n : ℕ} (u : Term) (h : n ∉ dFV t) : lift (nsub u
       simp only [nsub_abs, lift_abs, ih _ h]
 
 /-- HOL `nipkow_eta_lemma`: if `i` is not free in `t`, then `nsub _ i t` does not depend on the
-term being substituted; it merely decrements the free indices of `t`. -/
+term being substituted; it merely decrements the free indices of `t`.  Not used in proofs;
+it makes the paper's remark on `→ne` precise. -/
 lemma nsub_indep_of_not_mem_dFV {t : Term} {i : ℕ} (h : i ∉ dFV t) (u v : Term) :
     nsub u i t = nsub v i t := by
   induction t generalizing u v i with
@@ -168,43 +163,27 @@ lemma _root_.Cslib.LambdaCalculus.Unscoped.Untyped.DEta.equivariant (π : FinPer
   have h2 := h.dpm π⁻¹
   rwa [inv_smul_smul, inv_smul_smul] at h2
 
-/-- The `→ne`-redexes reduce under `→e` (HOL `alt_neta_redex`). -/
+/-- The `→ne`-redexes reduce under `→e` (HOL `alt_eta_redex`). -/
 lemma deta_nABS_redex {t : Term} (u : Term) (h : 0 ∉ dFV t) :
     DEta (abs (app t (var 0))) (nsub u 0 t) := by
   set t' := nsub u 0 t with ht'
   obtain ⟨i, hi⟩ := dfresh_exists t'
-  have hlift : lift t' 0 = t := lift_nsub u h
   have key : dLAM i (app t' (var i)) = abs (app t (var 0)) := by
-    have h1 : i + 1 ∉ dFV (lift t' 0) := by
-      simp only [mem_dFV_lift]
-      rintro (⟨h1, _⟩ | ⟨_, h2⟩)
-      · omega
-      · simp only [Nat.add_sub_cancel] at h2
-        exact hi h2
     simp only [dLAM, lift_app, dsub_app, lift_var, Nat.not_lt_zero, ite_false, dsub_var]
-    rw [dsub_of_not_mem_dFV h1, hlift]
+    rw [dsub_of_not_mem_dFV (by grind [mem_dFV_lift]), lift_nsub u h]
     simp
   rw [← key]
   exact DEta.red i hi
 
-/-- The `→e`-redexes reduce under `→ne` (HOL `alt_eta_redex`). -/
+/-- The `→e`-redexes reduce under `→ne` (HOL `alt_neta_redex`). -/
 lemma neta_dLAM_redex {t : Term} {i : ℕ} (h : i ∉ dFV t) :
     NEta (dLAM i (app t (var i))) t := by
-  have h1 : i + 1 ∉ dFV (lift t 0) := by
-    simp only [mem_dFV_lift]
-    rintro (⟨h1, _⟩ | ⟨_, h2⟩)
-    · omega
-    · simp only [Nat.add_sub_cancel] at h2
-      exact h h2
   have key : dLAM i (app t (var i)) = abs (app (lift t 0) (var 0)) := by
     simp only [dLAM, lift_app, dsub_app, lift_var, Nat.not_lt_zero, ite_false, dsub_var]
-    rw [dsub_of_not_mem_dFV h1]
+    rw [dsub_of_not_mem_dFV (by grind [mem_dFV_lift])]
     simp
-  have h0 : (0 : ℕ) ∉ dFV (lift t 0) := by
-    simp only [mem_dFV_lift]
-    rintro (⟨h1, _⟩ | ⟨h1, _⟩) <;> omega
   rw [key]
-  have hred := NEta.red (t := lift t 0) t h0
+  have hred := NEta.red (t := lift t 0) t (by grind [mem_dFV_lift])
   rwa [nsub_lift] at hred
 
 /-- `→e ⊆ →ne` (HOL `eta_neta`).  The congruence case is Theorem 15. -/
@@ -240,12 +219,11 @@ namespace Cslib.LambdaCalculus.NamedDeBruijn
 open Cslib.Logic.Nominal
 open Cslib.LambdaCalculus.Unscoped.Untyped
 open Cslib.LambdaCalculus.Named.Untyped (TermAlpha EtaAlpha)
-open scoped Cslib.LambdaCalculus.Named.Untyped.TermAlpha
+open scoped Cslib.LambdaCalculus.Named.Untyped Cslib.LambdaCalculus.Named.Untyped.TermAlpha
 
 /-- The "→" half of the η-analogue of Theorem 12: a rule induction on `→ηα`.  The side
 condition of the redex rule transfers along `mem_dFV_fromTerm`. -/
-lemma deta_of_etaAlpha {M N : TermAlpha Atom} (h : EtaAlpha M N) :
-    DEta (toDB M) (toDB N) := by
+lemma deta_of_etaAlpha {M N : TermAlpha Atom} (h : M →ηα N) : DEta (toDB M) (toDB N) := by
   induction h with
   | red x m hx =>
       have hdfv : x.val ∉ Term.dFV (fromTerm m) := fun hc => hx (by
@@ -258,12 +236,10 @@ lemma deta_of_etaAlpha {M N : TermAlpha Atom} (h : EtaAlpha M N) :
 
 /-- The "←" half of the η-analogue of Theorem 12: a rule induction on `→e`, generalised over
 the preimages of the two de Bruijn terms, using the inversion lemmas for `f`. -/
-lemma etaAlpha_of_deta : ∀ {t u : Term}, DEta t u →
-    ∀ M N : TermAlpha Atom, toDB M = t → toDB N = u → EtaAlpha M N := by
-  intro t u h
-  induction h with
+lemma etaAlpha_of_deta {t u : Term} (h : DEta t u) (M N : TermAlpha Atom) (hM : toDB M = t)
+    (hN : toDB N = u) : M →ηα N := by
+  induction h generalizing M N with
   | @red t i hi =>
-      intro M N hM hN
       obtain ⟨M₀, rfl, h₀⟩ := toDB_eq_dLAM hM
       obtain ⟨M₁, M₂, rfl, h₁, h₂⟩ := toDB_eq_app h₀
       obtain ⟨m, rfl⟩ := Quotient.exists_rep M₁
@@ -275,32 +251,27 @@ lemma etaAlpha_of_deta : ∀ {t u : Term}, DEta t u →
       intro hc
       exact hi (h₁ ▸ (mem_dFV_fromTerm m i).mpr hc)
   | appL z _ ih =>
-      intro M N hM hN
       obtain ⟨M₁, M₂, rfl, h₁, h₂⟩ := toDB_eq_app hM
       obtain ⟨N₁, N₂, rfl, k₁, k₂⟩ := toDB_eq_app hN
       rw [show M₂ = N₂ from toDB_injective (by rw [h₂, k₂])]
       exact EtaAlpha.appL _ (ih M₁ N₁ h₁ k₁)
   | appR z _ ih =>
-      intro M N hM hN
       obtain ⟨M₁, M₂, rfl, h₁, h₂⟩ := toDB_eq_app hM
       obtain ⟨N₁, N₂, rfl, k₁, k₂⟩ := toDB_eq_app hN
       rw [show M₁ = N₁ from toDB_injective (by rw [h₁, k₁])]
       exact EtaAlpha.appR _ (ih M₂ N₂ h₂ k₂)
   | lam i _ ih =>
-      intro M N hM hN
       obtain ⟨M₀, rfl, h₀⟩ := toDB_eq_dLAM hM
       obtain ⟨N₀, rfl, k₀⟩ := toDB_eq_dLAM hN
       exact EtaAlpha.abs _ (ih M₀ N₀ h₀ k₀)
 
 /-- η-reduction on `Λα` corresponds to `→e` on `dB` (HOL `eta_eq_lam_eta`). -/
-lemma etaAlpha_iff_deta {M N : TermAlpha Atom} :
-    EtaAlpha M N ↔ DEta (toDB M) (toDB N) :=
+lemma etaAlpha_iff_deta {M N : TermAlpha Atom} : M →ηα N ↔ DEta (toDB M) (toDB N) :=
   ⟨deta_of_etaAlpha, fun h => etaAlpha_of_deta h M N rfl rfl⟩
 
 /-- The η-analogue of Theorem 20: the bijection `f` is a homomorphism for η-reduction as
 well, so `dB` with Nipkow's `→ne` is isomorphic to `λNα` with η-reduction. -/
-lemma etaAlpha_iff_neta {M N : TermAlpha Atom} :
-    EtaAlpha M N ↔ NEta (toDB M) (toDB N) := by
+lemma etaAlpha_iff_neta {M N : TermAlpha Atom} : M →ηα N ↔ NEta (toDB M) (toDB N) := by
   rw [etaAlpha_iff_deta, Term.deta_iff_neta]
 
 end Cslib.LambdaCalculus.NamedDeBruijn
