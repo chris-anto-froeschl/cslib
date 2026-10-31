@@ -10,16 +10,16 @@ public import Cslib.Languages.LambdaCalculus.Named.Untyped.AlphaEquivProperties
 
 /-! # The α-quotient `Λα` and the reduction system `λNα`
 
-The named side of the isomorphism of [Norrish2007a]: raw terms quotiented by `=α` (Section 2.1)
-with β- and η-reduction on the quotient (Table 1). Substitution is lifted from raw terms, as for
-`λHoα`; `TermAlpha.subst_unique` shows that this agrees with the recursive definition of
-[Norrish2006].
+Named λ-terms quotiented by α-equivalence, with β- and η-reduction on the quotient: the named
+side of the isomorphism with de Bruijn terms of [Norrish2007a]. Substitution is lifted from raw
+terms; `TermAlpha.subst_unique` (in `AlphaQuotientProperties.lean`) shows that this agrees with
+defining it on the quotient by recursion, as in [Norrish2006].
 
 ## Main definitions
 
 * `TermAlpha` : the type `Λα`, with `⟦m⟧α` the class of `m` and `TermAlpha.var`, `app`, `abs`,
   `subst` lifted from raw terms.
-* `BetaAlpha`, `EtaAlpha` : β- and η-reduction of `λNα`.
+* `BetaAlpha`, `EtaAlpha` : β- and η-reduction on `Λα`.
 
 ## References
 
@@ -45,7 +45,7 @@ def Term.alphaSetoid (Var : Type u) [DecidableEq Var] [HasFresh Var] : Setoid (T
   r := Term.AlphaEquiv
   iseqv := ⟨Term.AlphaEquiv.refl, Term.AlphaEquiv.symm, Term.AlphaEquiv.trans⟩
 
-/-- `Λα` (Section 2.1 [Norrish2007a]): raw terms up to α-equivalence. -/
+/-- `Λα`: raw terms up to α-equivalence. -/
 def TermAlpha (Var : Type u) [DecidableEq Var] [HasFresh Var] : Type u :=
   Quotient (Term.alphaSetoid Var)
 
@@ -63,17 +63,16 @@ lemma mk_eq_mk {m n : Term Var} : (⟦m⟧α : TermAlpha Var) = ⟦n⟧α ↔ m 
 /-- Variables of `Λα`. -/
 def var (x : Var) : TermAlpha Var := ⟦Term.var x⟧α
 
-/-- Application in `Λα`, lifted from `Λvar`. -/
+/-- Application in `Λα`, lifted from raw terms. -/
 def app : TermAlpha Var → TermAlpha Var → TermAlpha Var :=
   Quotient.map₂ Term.app (fun _ _ h₁ _ _ h₂ => Term.AlphaEquiv.app h₁ h₂)
 
-/-- Abstraction in `Λα`, lifted from `Λvar`. This operation is *not* injective. -/
+/-- Abstraction in `Λα`, lifted from raw terms. This operation is *not* injective. -/
 def abs (x : Var) : TermAlpha Var → TermAlpha Var :=
   Quotient.map (Term.abs x) (fun _ _ h => Term.AlphaEquiv.abs_congr h)
 
-/-- Capture-avoiding substitution on `Λα`, of type `Λα × V × Λα → Λα` as in Table 1
-[Norrish2007a]. Well defined because substitution respects α-equivalence
-(`Term.subst.preserve_AlphaEquiv`). -/
+/-- Capture-avoiding substitution on `Λα`, well defined because substitution respects
+α-equivalence (`Term.subst.preserve_AlphaEquiv`). -/
 def subst (M : TermAlpha Var) (x : Var) (N : TermAlpha Var) : TermAlpha Var :=
   Quotient.map₂ (fun m n => m[x := n])
     (fun _ _ h₁ _ _ h₂ => Term.subst.preserve_AlphaEquiv h₁ h₂) M N
@@ -94,8 +93,7 @@ lemma subst_mk (m n : Term Var) (x : Var) :
 
 end TermAlpha
 
-/-- β-reduction of `λNα` (Table 1 [Norrish2007a]), on the α-quotiented type. The paper takes
-its rules as known; these are the usual ones (HOL `compat_closure beta`). -/
+/-- β-reduction on `Λα`, with the usual rules. -/
 inductive BetaAlpha : TermAlpha Var → TermAlpha Var → Prop where
   /-- Contraction of a β-redex. -/
   | red (x : Var) (M N : TermAlpha Var) :
@@ -112,9 +110,9 @@ inductive BetaAlpha : TermAlpha Var → TermAlpha Var → Prop where
 
 @[inherit_doc] scoped infix:39 " →βα " => BetaAlpha
 
-/-- η-reduction of `λNα`, used in Section 4.4 [Norrish2007a]. -/
+/-- η-reduction on `Λα`. -/
 inductive EtaAlpha : TermAlpha Var → TermAlpha Var → Prop where
-  /-- Contraction of an η-redex `LAM x (APP M (VAR x))` with `x` not free in `M`. -/
+  /-- Contraction of an η-redex `λx. M x` with `x` not free in `M`. -/
   | red (x : Var) (m : Term Var) : x ∉ m.fv →
       EtaAlpha (TermAlpha.abs x (TermAlpha.app (TermAlpha.mk m) (TermAlpha.var x)))
         (TermAlpha.mk m)
