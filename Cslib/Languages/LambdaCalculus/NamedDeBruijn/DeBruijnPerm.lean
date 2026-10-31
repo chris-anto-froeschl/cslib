@@ -224,26 +224,6 @@ lemma supports_dFV (t : Term) : Supports ((dFV t).image Atom.ofNat) t := by
         simp only [Atom.ofNat]
         omega
 
-/-- Permuting a term permutes its free indices (set form of HOL `IN_dFV_dpm`). Only used for
-the `NomSet` instance below. -/
-lemma dFV_dpm (t : Term) (π : FinPerm) :
-    (dFV (π • t)).image Atom.ofNat = ((dFV t).image Atom.ofNat).image (π ·) := by
-  ext a
-  simp only [Finset.mem_image, mem_dFV_dpm]
-  constructor
-  · rintro ⟨i, ⟨j, hj, rfl⟩, rfl⟩
-    exact ⟨Atom.ofNat j, ⟨j, hj, rfl⟩, Atom.val_ofNat _⟩
-  · rintro ⟨b, ⟨j, hj, rfl⟩, rfl⟩
-    exact ⟨(π (Atom.ofNat j)).val, ⟨j, hj, rfl⟩, Atom.val_ofNat _⟩
-
-/-- de Bruijn terms form a nominal set, with support the set of free indices (Section 4.2
-[Norrish2007a]). Unused for now; a definition of `f` by Pitts' recursion would need it. -/
-instance : NomSet Term where
-  toMulAction := inferInstance
-  supp t := (dFV t).image Atom.ofNat
-  supp_supports := supports_dFV
-  supp_equivariant := dFV_dpm
-
 /-- **Lemma 9** [Norrish2007a] (Permutations and `lift`):
 `lift (π · t) n = (inc n π) · (lift t n)`. -/
 lemma lift_dpm (π : FinPerm) (t : Term) (n : ℕ) :
